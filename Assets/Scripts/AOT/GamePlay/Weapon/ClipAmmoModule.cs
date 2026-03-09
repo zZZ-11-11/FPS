@@ -1,49 +1,84 @@
+using System.Collections;
 using FPS.GamePlay.Weapon.Base;
 using UnityEngine;
 
 namespace FPS.GamePlay.Weapon
 {
-    public class ClipAmmoModule : WeaponAmmoModule
+    public sealed class ClipAmmoModule : WeaponAmmoModule
     {
-        public int ClipSize = 30;
-        public int MaxBackupAmmo = 120;
-        public bool AutomaticReload = true;
+        public int clipSize = 30;
+        public int maxBackupAmmo = 120;
+        public float reloadTime = 2f;
+        public bool autoReloadOnEmpty = true;
 
-        private float m_CurrentClipAmmo;
+        private int m_CurrentClipAmmo;
         private int m_CurrentBackupAmmo;
+
+        public int currentClipAmmo => m_CurrentClipAmmo;
+        public int currentBackupAmmo => m_CurrentBackupAmmo;
+
+        private bool m_IsReloading;
+        public override bool isReloading => m_IsReloading;
 
         void Awake()
         {
-            m_CurrentClipAmmo = ClipSize;
-            m_CurrentBackupAmmo = MaxBackupAmmo;
+            m_CurrentClipAmmo = clipSize;
+            m_CurrentBackupAmmo = maxBackupAmmo;
+            autoRegenerate = false;
         }
 
         public override bool HasEnoughAmmo(float amountNeeded)
         {
-            return m_CurrentClipAmmo >= amountNeeded;
+            var intAmount = Mathf.RoundToInt(amountNeeded);
+            return m_CurrentClipAmmo >= intAmount;
         }
 
         public override void ConsumeAmmo(float amount)
         {
-            m_CurrentClipAmmo -= amount;
-            if (m_CurrentClipAmmo <= 0 && AutomaticReload)
+            if (m_IsReloading)
             {
-                Reload();
+                return;
+            }
+
+            var intAmount = Mathf.RoundToInt(amount);
+            m_CurrentClipAmmo -= intAmount;
+
+            // 防止异常情况扣成负数
+            m_CurrentClipAmmo = Mathf.Max(0, m_CurrentClipAmmo);
+
+            if (m_CurrentClipAmmo <= 0 && autoReloadOnEmpty)
+            {
+                StartReload();
             }
         }
 
-        public override float GetCurrentAmmoRatio()
+        public override void StartReload()
         {
-            return m_CurrentClipAmmo / ClipSize;
+            if (m_IsReloading || m_CurrentClipAmmo == clipSize || m_CurrentBackupAmmo <= 0)
+            {
+                return;
+            }
+
+            StartCoroutine(ReloadCoroutine());
         }
 
-        public void Reload()
+        private IEnumerator ReloadCoroutine()
         {
-            // 简单的换弹逻辑，可根据需要扩展
-            float needed = ClipSize - m_CurrentClipAmmo;
-            float available = Mathf.Min(needed, m_CurrentBackupAmmo);
+            m_IsReloading = true;
+
+            // TODO: 这里可以通过事件通知 FXModule 播放换弹动画/音效
+
+            yield return new WaitForSeconds(reloadTime); // 等待换弹时间
+
+            // 结算弹药数学逻辑
+            var needed = clipSize - m_CurrentClipAmmo;
+            var available = Mathf.Min(needed, m_CurrentBackupAmmo);
             m_CurrentClipAmmo += available;
-            m_CurrentBackupAmmo -= (int) available;
+            m_CurrentBackupAmmo -= available;
+
+            m_IsReloading = false;
         }
+
+        public override float GetCurrentAmmoRatio() => (float) m_CurrentClipAmmo / clipSize;
     }
 }

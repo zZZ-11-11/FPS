@@ -5,14 +5,14 @@ namespace FPS.Game.Managers
 {
     public class ActorsManager : MonoBehaviour
     {
-        public List<Actor> Actors { get; private set; }
-        public GameObject Player { get; private set; }
+        public List<Actor> actors { get; private set; }
+        public GameObject player { get; private set; }
 
-        public void SetPlayer(GameObject player) => Player = player;
+        public void SetPlayer(GameObject player) => this.player = player;
 
         void Awake()
         {
-            Actors = new List<Actor>();
+            actors = new List<Actor>();
         }
     }
 }

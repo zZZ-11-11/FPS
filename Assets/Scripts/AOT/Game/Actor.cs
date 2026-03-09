@@ -3,15 +3,13 @@ using UnityEngine;
 
 namespace FPS.Game
 {
-    public class Actor : MonoBehaviour
+    public sealed class Actor : MonoBehaviour
     {
-        [Tooltip("Represents the affiliation (or team) of the actor. Actors of the same affiliation are friendly to each other")]
-        public int Affiliation;
+        public int affiliation;
 
-        [Tooltip("Represents point where other actors will aim when they attack this actor")]
-        public Transform AimPoint;
+        public Transform aimPoint;
 
-        ActorsManager m_ActorsManager;
+        private ActorsManager m_ActorsManager;
 
         void Start()
         {
@@ -19,9 +17,9 @@ namespace FPS.Game
             DebugUtility.HandleErrorIfNullFindObject<ActorsManager, Actor>(m_ActorsManager, this);
 
             // Register as an actor
-            if (!m_ActorsManager.Actors.Contains(this))
+            if (!m_ActorsManager.actors.Contains(this))
             {
-                m_ActorsManager.Actors.Add(this);
+                m_ActorsManager.actors.Add(this);
             }
         }
 
@@ -30,7 +28,7 @@ namespace FPS.Game
             // Unregister as an actor
             if (m_ActorsManager)
             {
-                m_ActorsManager.Actors.Remove(this);
+                m_ActorsManager.actors.Remove(this);
             }
         }
     }

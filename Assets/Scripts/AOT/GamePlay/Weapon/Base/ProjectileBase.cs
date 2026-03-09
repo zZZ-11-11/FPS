@@ -5,23 +5,24 @@ namespace FPS.GamePlay.Weapon.Base
 {
     public abstract class ProjectileBase : MonoBehaviour
     {
-        public GameObject Owner { get; private set; }
-        public Vector3 InitialPosition { get; private set; }
-        public Vector3 InitialDirection { get; private set; }
-        public Vector3 InheritedMuzzleVelocity { get; private set; }
-        public float InitialCharge { get; private set; }
+        public GameObject owner { get; private set; }
+        public Vector3 initialPosition { get; private set; }
+        public Vector3 initialDirection { get; private set; }
+        public Vector3 inheritedMuzzleVelocity { get; private set; }
+        public float initialCharge { get; private set; }
 
-        public UnityAction OnShoot;
+        public UnityAction onShoot;
 
-        public void Shoot(WeaponCore controller)
+        public void Shoot(ShootContext shootContext)
         {
-            /*Owner = controller.Owner;
-        InitialPosition = transform.position;
-        InitialDirection = transform.forward;
-        InheritedMuzzleVelocity = controller.MuzzleWorldVelocity;
-        InitialCharge = controller.CurrentCharge;
+            owner = shootContext.owner;
+            inheritedMuzzleVelocity = shootContext.muzzleWorldVelocity;
+            initialCharge = shootContext.currentCharge;
 
-        OnShoot?.Invoke();*/
+            var projectileTransform = transform;
+            initialPosition = projectileTransform.position;
+            initialDirection = projectileTransform.forward;
+            onShoot?.Invoke();
         }
     }
 }
