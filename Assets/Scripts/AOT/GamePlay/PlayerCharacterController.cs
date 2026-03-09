@@ -8,124 +8,93 @@ using UnityEngine.Events;
 namespace FPS.GamePlay
 {
     [RequireComponent(typeof(CharacterController), typeof(PlayerInputHandler), typeof(AudioSource))]
-    public class PlayerCharacterController : MonoBehaviour
+    public sealed class PlayerCharacterController : MonoBehaviour
     {
         [Header("References")]
-        [Tooltip("Reference to the main camera used for the player")]
-        public Camera PlayerCamera;
+        public Camera playerCamera;
 
-        [Tooltip("Audio source for footsteps, jump, etc...")]
-        public AudioSource AudioSource;
+        public AudioSource audioSource;
 
         [Header("General")]
-        [Tooltip("Force applied downward when in the air")]
-        public float GravityDownForce = 20f;
+        public float gravityDownForce = 20f;
 
-        [Tooltip("Physic layers checked to consider the player grounded")]
-        public LayerMask GroundCheckLayers = -1;
+        public LayerMask groundCheckLayers = -1;
 
-        [Tooltip("distance from the bottom of the character controller capsule to test for grounded")]
-        public float GroundCheckDistance = 0.05f;
+        public float groundCheckDistance = 0.05f;
 
         [Header("Movement")]
-        [Tooltip("Max movement speed when grounded (when not sprinting)")]
-        public float MaxSpeedOnGround = 10f;
+        public float maxSpeedOnGround = 10f;
 
-        [Tooltip(
-            "Sharpness for the movement when grounded, a low value will make the player accelerate and decelerate slowly, a high value will do the opposite")]
-        public float MovementSharpnessOnGround = 15;
+        public float movementSharpnessOnGround = 15;
 
-        [Tooltip("Max movement speed when crouching")]
         [Range(0, 1)]
-        public float MaxSpeedCrouchedRatio = 0.5f;
+        public float maxSpeedCrouchedRatio = 0.5f;
 
-        [Tooltip("Max movement speed when not grounded")]
-        public float MaxSpeedInAir = 10f;
+        public float maxSpeedInAir = 10f;
 
-        [Tooltip("Acceleration speed when in the air")]
-        public float AccelerationSpeedInAir = 25f;
+        public float accelerationSpeedInAir = 25f;
 
-        [Tooltip("Multiplicator for the sprint speed (based on grounded speed)")]
-        public float SprintSpeedModifier = 2f;
+        public float sprintSpeedModifier = 2f;
 
-        [Tooltip("Height at which the player dies instantly when falling off the map")]
-        public float KillHeight = -50f;
+        public float killHeight = -50f;
 
         [Header("Rotation")]
-        [Tooltip("Rotation speed for moving the camera")]
-        public float RotationSpeed = 200f;
+        public float rotationSpeed = 200f;
 
         [Range(0.1f, 1f)]
-        [Tooltip("Rotation speed multiplier when aiming")]
-        public float AimingRotationMultiplier = 0.4f;
+        public float aimingRotationMultiplier = 0.4f;
 
         [Header("Jump")]
-        [Tooltip("Force applied upward when jumping")]
-        public float JumpForce = 9f;
+        public float jumpForce = 9f;
 
         [Header("Stance")]
-        [Tooltip("Ratio (0-1) of the character height where the camera will be at")]
-        public float CameraHeightRatio = 0.9f;
+        public float cameraHeightRatio = 0.9f;
 
-        [Tooltip("Height of character when standing")]
-        public float CapsuleHeightStanding = 1.8f;
+        public float capsuleHeightStanding = 1.8f;
 
-        [Tooltip("Height of character when crouching")]
-        public float CapsuleHeightCrouching = 0.9f;
+        public float capsuleHeightCrouching = 0.9f;
 
-        [Tooltip("Speed of crouching transitions")]
-        public float CrouchingSharpness = 10f;
+        public float crouchingSharpness = 10f;
 
         [Header("Audio")]
-        [Tooltip("Amount of footstep sounds played when moving one meter")]
-        public float FootstepSfxFrequency = 1f;
+        public float footstepSfxFrequency = 1f;
 
-        [Tooltip("Amount of footstep sounds played when moving one meter while sprinting")]
-        public float FootstepSfxFrequencyWhileSprinting = 1f;
+        public float footstepSfxFrequencyWhileSprinting = 1f;
 
-        [Tooltip("Sound played for footsteps")]
-        public AudioClip FootstepSfx;
+        public AudioClip footstepSfx;
 
-        [Tooltip("Sound played when jumping")]
-        public AudioClip JumpSfx;
+        public AudioClip jumpSfx;
 
-        [Tooltip("Sound played when landing")]
-        public AudioClip LandSfx;
+        public AudioClip landSfx;
 
-        [Tooltip("Sound played when taking damage froma fall")]
-        public AudioClip FallDamageSfx;
+        public AudioClip fallDamageSfx;
 
         [Header("Fall Damage")]
-        [Tooltip("Whether the player will recieve damage when hitting the ground at high speed")]
-        public bool RecievesFallDamage;
+        public bool recievesFallDamage;
 
-        [Tooltip("Minimun fall speed for recieving fall damage")]
-        public float MinSpeedForFallDamage = 10f;
+        public float minSpeedForFallDamage = 10f;
 
-        [Tooltip("Fall speed for recieving th emaximum amount of fall damage")]
-        public float MaxSpeedForFallDamage = 30f;
+        public float maxSpeedForFallDamage = 30f;
 
-        [Tooltip("Damage recieved when falling at the mimimum speed")]
-        public float FallDamageAtMinSpeed = 10f;
+        public float fallDamageAtMinSpeed = 10f;
 
-        [Tooltip("Damage recieved when falling at the maximum speed")]
-        public float FallDamageAtMaxSpeed = 50f;
+        public float fallDamageAtMaxSpeed = 50f;
 
-        public UnityAction<bool> OnStanceChanged;
+        public UnityAction<bool> onStanceChanged;
 
-        public Vector3 CharacterVelocity { get; set; }
-        public bool IsGrounded { get; private set; }
-        public bool HasJumpedThisFrame { get; private set; }
-        public bool IsDead { get; private set; }
-        public bool IsCrouching { get; private set; }
+        public Vector3 characterVelocity { get; set; }
+        public bool isGrounded { get; private set; }
+        public bool hasJumpedThisFrame { get; private set; }
+        public bool isDead { get; private set; }
+        public bool isCrouching { get; private set; }
 
-        public float RotationMultiplier
+        public float rotationMultiplier
         {
             get
             {
                 if (m_WeaponsManager.IsAiming)
                 {
-                    return AimingRotationMultiplier;
+                    return aimingRotationMultiplier;
                 }
 
                 return 1f;
@@ -140,13 +109,18 @@ namespace FPS.GamePlay
         Vector3 m_GroundNormal;
         Vector3 m_CharacterVelocity;
         Vector3 m_LatestImpactSpeed;
-        float m_LastTimeJumped = 0f;
-        float m_CameraVerticalAngle = 0f;
+        private float m_LastTimeJumped;
+        private float m_CameraVerticalAngle;
         float m_FootstepDistanceCounter;
         float m_TargetCharacterHeight;
 
-        const float k_JumpGroundingPreventionTime = 0.2f;
-        const float k_GroundCheckDistanceInAir = 0.07f;
+        public PlayerCharacterController(UnityAction<bool> onStanceChanged)
+        {
+            this.onStanceChanged = onStanceChanged;
+        }
+
+        const float k_jump_grounding_prevention_time = 0.2f;
+        const float k_ground_check_distance_in_air = 0.07f;
 
         void Awake()
         {
@@ -188,42 +162,42 @@ namespace FPS.GamePlay
         void Update()
         {
             // check for Y kill
-            if (!IsDead && transform.position.y < KillHeight)
+            if (!isDead && transform.position.y < killHeight)
             {
                 m_Health.Kill();
             }
 
-            HasJumpedThisFrame = false;
+            hasJumpedThisFrame = false;
 
-            bool wasGrounded = IsGrounded;
+            bool wasGrounded = isGrounded;
             GroundCheck();
 
             // landing
-            if (IsGrounded && !wasGrounded)
+            if (isGrounded && !wasGrounded)
             {
                 // Fall damage
-                float fallSpeed = -Mathf.Min(CharacterVelocity.y, m_LatestImpactSpeed.y);
-                float fallSpeedRatio = (fallSpeed - MinSpeedForFallDamage) /
-                                       (MaxSpeedForFallDamage - MinSpeedForFallDamage);
-                if (RecievesFallDamage && fallSpeedRatio > 0f)
+                float fallSpeed = -Mathf.Min(characterVelocity.y, m_LatestImpactSpeed.y);
+                float fallSpeedRatio = (fallSpeed - minSpeedForFallDamage) /
+                                       (maxSpeedForFallDamage - minSpeedForFallDamage);
+                if (recievesFallDamage && fallSpeedRatio > 0f)
                 {
-                    float dmgFromFall = Mathf.Lerp(FallDamageAtMinSpeed, FallDamageAtMaxSpeed, fallSpeedRatio);
+                    float dmgFromFall = Mathf.Lerp(fallDamageAtMinSpeed, fallDamageAtMaxSpeed, fallSpeedRatio);
                     m_Health.TakeDamage(dmgFromFall, null);
 
                     // fall damage SFX
-                    AudioSource.PlayOneShot(FallDamageSfx);
+                    audioSource.PlayOneShot(fallDamageSfx);
                 }
                 else
                 {
                     // land SFX
-                    AudioSource.PlayOneShot(LandSfx);
+                    audioSource.PlayOneShot(landSfx);
                 }
             }
 
             // crouching
             if (m_InputHandler.GetCrouchInputDown())
             {
-                SetCrouchingState(!IsCrouching, false);
+                SetCrouchingState(!isCrouching, false);
             }
 
             UpdateCharacterHeight(false);
@@ -233,7 +207,7 @@ namespace FPS.GamePlay
 
         void OnDie()
         {
-            IsDead = true;
+            isDead = true;
 
             // Tell the weapons manager to switch to a non-existing weapon in order to lower the weapon
             m_WeaponsManager.SwitchToWeaponIndex(-1, true);
@@ -245,18 +219,18 @@ namespace FPS.GamePlay
         {
             // Make sure that the ground check distance while already in air is very small, to prevent suddenly snapping to ground
             float chosenGroundCheckDistance =
-                IsGrounded ? (m_Controller.skinWidth + GroundCheckDistance) : k_GroundCheckDistanceInAir;
+                isGrounded ? (m_Controller.skinWidth + groundCheckDistance) : k_ground_check_distance_in_air;
 
             // reset values before the ground check
-            IsGrounded = false;
+            isGrounded = false;
             m_GroundNormal = Vector3.up;
 
             // only try to detect ground if it's been a short amount of time since last jump; otherwise we may snap to the ground instantly after we try jumping
-            if (Time.time >= m_LastTimeJumped + k_JumpGroundingPreventionTime)
+            if (Time.time >= m_LastTimeJumped + k_jump_grounding_prevention_time)
             {
                 // if we're grounded, collect info about the ground normal with a downward capsule cast representing our character capsule
                 if (Physics.CapsuleCast(GetCapsuleBottomHemisphere(), GetCapsuleTopHemisphere(m_Controller.height),
-                        m_Controller.radius, Vector3.down, out RaycastHit hit, chosenGroundCheckDistance, GroundCheckLayers,
+                        m_Controller.radius, Vector3.down, out RaycastHit hit, chosenGroundCheckDistance, groundCheckLayers,
                         QueryTriggerInteraction.Ignore))
                 {
                     // storing the upward direction for the surface found
@@ -267,7 +241,7 @@ namespace FPS.GamePlay
                     if (Vector3.Dot(hit.normal, transform.up) > 0f &&
                         IsNormalUnderSlopeLimit(m_GroundNormal))
                     {
-                        IsGrounded = true;
+                        isGrounded = true;
 
                         print("distance:" + hit.distance);
                         // handle snapping to the ground
@@ -286,21 +260,22 @@ namespace FPS.GamePlay
             {
                 // rotate the transform with the input speed around its local Y axis
                 transform.Rotate(
-                    new Vector3(0f, (m_InputHandler.GetLookInputsHorizontal() * RotationSpeed * RotationMultiplier),
+                    new Vector3(0f, (m_InputHandler.GetLookInputsHorizontal() * rotationSpeed * rotationMultiplier),
                         0f), Space.Self);
             }
 
             // vertical camera rotation
             {
-                print("m_CameraVerticalAngle=" + m_CameraVerticalAngle + "+" + m_InputHandler.GetLookInputsVertical() + "+" + " RotationSpeed:" + RotationSpeed + "+" + " RotationMultiplier:" + RotationMultiplier);
+                print("m_CameraVerticalAngle=" + m_CameraVerticalAngle + "+" + m_InputHandler.GetLookInputsVertical() + "+" + " RotationSpeed:" + rotationSpeed + "+" + " RotationMultiplier:" +
+                      rotationMultiplier);
                 // add vertical inputs to the camera's vertical angle
-                m_CameraVerticalAngle += m_InputHandler.GetLookInputsVertical() * RotationSpeed * RotationMultiplier;
+                m_CameraVerticalAngle += m_InputHandler.GetLookInputsVertical() * rotationSpeed * rotationMultiplier;
 
                 // limit the camera's vertical angle to min/max
                 m_CameraVerticalAngle = Mathf.Clamp(m_CameraVerticalAngle, -89f, 89f);
 
                 // apply the vertical angle as a local rotation to the camera transform along its right axis (makes it pivot up and down)
-                PlayerCamera.transform.localEulerAngles = new Vector3(m_CameraVerticalAngle, 0, 0);
+                playerCamera.transform.localEulerAngles = new Vector3(m_CameraVerticalAngle, 0, 0);
             }
 
             // character movement handling
@@ -311,95 +286,95 @@ namespace FPS.GamePlay
                     isSprinting = SetCrouchingState(false, false);
                 }
 
-                float speedModifier = isSprinting ? SprintSpeedModifier : 1f;
+                float speedModifier = isSprinting ? sprintSpeedModifier : 1f;
 
                 // converts move input to a worldspace vector based on our character's transform orientation
                 Vector3 worldspaceMoveInput = transform.TransformVector(m_InputHandler.GetMoveInput());
 
                 // handle grounded movement
-                if (IsGrounded)
+                if (isGrounded)
                 {
                     // calculate the desired velocity from inputs, max speed, and current slope
-                    Vector3 targetVelocity = worldspaceMoveInput * MaxSpeedOnGround * speedModifier;
+                    Vector3 targetVelocity = worldspaceMoveInput * maxSpeedOnGround * speedModifier;
                     // reduce speed if crouching by crouch speed ratio
-                    if (IsCrouching)
-                        targetVelocity *= MaxSpeedCrouchedRatio;
+                    if (isCrouching)
+                        targetVelocity *= maxSpeedCrouchedRatio;
                     targetVelocity = GetDirectionReorientedOnSlope(targetVelocity.normalized, m_GroundNormal) *
                                      targetVelocity.magnitude;
 
                     // smoothly interpolate between our current velocity and the target velocity based on acceleration speed
-                    CharacterVelocity = Vector3.Lerp(CharacterVelocity, targetVelocity,
-                        MovementSharpnessOnGround * Time.deltaTime);
+                    characterVelocity = Vector3.Lerp(characterVelocity, targetVelocity,
+                        movementSharpnessOnGround * Time.deltaTime);
 
                     // jumping
-                    if (IsGrounded && m_InputHandler.GetJumpInputDown())
+                    if (isGrounded && m_InputHandler.GetJumpInputDown())
                     {
                         // force the crouch state to false
                         if (SetCrouchingState(false, false))
                         {
                             // start by canceling out the vertical component of our velocity
-                            CharacterVelocity = new Vector3(CharacterVelocity.x, 0f, CharacterVelocity.z);
+                            characterVelocity = new Vector3(characterVelocity.x, 0f, characterVelocity.z);
 
                             // then, add the jumpSpeed value upwards
-                            CharacterVelocity += Vector3.up * JumpForce;
+                            characterVelocity += Vector3.up * jumpForce;
 
                             // play sound
-                            AudioSource.PlayOneShot(JumpSfx);
+                            audioSource.PlayOneShot(jumpSfx);
 
                             // remember last time we jumped because we need to prevent snapping to ground for a short time
                             m_LastTimeJumped = Time.time;
-                            HasJumpedThisFrame = true;
+                            hasJumpedThisFrame = true;
 
                             // Force grounding to false
-                            IsGrounded = false;
+                            isGrounded = false;
                             m_GroundNormal = Vector3.up;
                         }
                     }
 
                     // footsteps sound
                     float chosenFootstepSfxFrequency =
-                        (isSprinting ? FootstepSfxFrequencyWhileSprinting : FootstepSfxFrequency);
+                        (isSprinting ? footstepSfxFrequencyWhileSprinting : footstepSfxFrequency);
                     if (m_FootstepDistanceCounter >= 1f / chosenFootstepSfxFrequency)
                     {
                         m_FootstepDistanceCounter = 0f;
-                        AudioSource.PlayOneShot(FootstepSfx);
+                        audioSource.PlayOneShot(footstepSfx);
                     }
 
                     // keep track of distance traveled for footsteps sound
-                    m_FootstepDistanceCounter += CharacterVelocity.magnitude * Time.deltaTime;
+                    m_FootstepDistanceCounter += characterVelocity.magnitude * Time.deltaTime;
                 }
                 // handle air movement
                 else
                 {
                     // add air acceleration
-                    CharacterVelocity += worldspaceMoveInput * AccelerationSpeedInAir * Time.deltaTime;
+                    characterVelocity += worldspaceMoveInput * accelerationSpeedInAir * Time.deltaTime;
 
                     // limit air speed to a maximum, but only horizontally
-                    float verticalVelocity = CharacterVelocity.y;
-                    Vector3 horizontalVelocity = Vector3.ProjectOnPlane(CharacterVelocity, Vector3.up);
-                    horizontalVelocity = Vector3.ClampMagnitude(horizontalVelocity, MaxSpeedInAir * speedModifier);
-                    CharacterVelocity = horizontalVelocity + (Vector3.up * verticalVelocity);
+                    float verticalVelocity = characterVelocity.y;
+                    Vector3 horizontalVelocity = Vector3.ProjectOnPlane(characterVelocity, Vector3.up);
+                    horizontalVelocity = Vector3.ClampMagnitude(horizontalVelocity, maxSpeedInAir * speedModifier);
+                    characterVelocity = horizontalVelocity + (Vector3.up * verticalVelocity);
 
                     // apply the gravity to the velocity
-                    CharacterVelocity += Vector3.down * GravityDownForce * Time.deltaTime;
+                    characterVelocity += Vector3.down * gravityDownForce * Time.deltaTime;
                 }
             }
 
             // apply the final calculated velocity value as a character movement
             Vector3 capsuleBottomBeforeMove = GetCapsuleBottomHemisphere();
             Vector3 capsuleTopBeforeMove = GetCapsuleTopHemisphere(m_Controller.height);
-            m_Controller.Move(CharacterVelocity * Time.deltaTime);
+            m_Controller.Move(characterVelocity * Time.deltaTime);
 
             // detect obstructions to adjust velocity accordingly
             m_LatestImpactSpeed = Vector3.zero;
             if (Physics.CapsuleCast(capsuleBottomBeforeMove, capsuleTopBeforeMove, m_Controller.radius,
-                    CharacterVelocity.normalized, out RaycastHit hit, CharacterVelocity.magnitude * Time.deltaTime, -1,
+                    characterVelocity.normalized, out RaycastHit hit, characterVelocity.magnitude * Time.deltaTime, -1,
                     QueryTriggerInteraction.Ignore))
             {
                 // We remember the last impact speed because the fall damage logic might need it
-                m_LatestImpactSpeed = CharacterVelocity;
+                m_LatestImpactSpeed = characterVelocity;
 
-                CharacterVelocity = Vector3.ProjectOnPlane(CharacterVelocity, hit.normal);
+                characterVelocity = Vector3.ProjectOnPlane(characterVelocity, hit.normal);
             }
         }
 
@@ -435,19 +410,19 @@ namespace FPS.GamePlay
             {
                 m_Controller.height = m_TargetCharacterHeight;
                 m_Controller.center = Vector3.up * m_Controller.height * 0.5f;
-                PlayerCamera.transform.localPosition = Vector3.up * m_TargetCharacterHeight * CameraHeightRatio;
-                m_Actor.AimPoint.transform.localPosition = m_Controller.center;
+                playerCamera.transform.localPosition = Vector3.up * m_TargetCharacterHeight * cameraHeightRatio;
+                m_Actor.aimPoint.transform.localPosition = m_Controller.center;
             }
             // Update smooth height
             else if (!Mathf.Approximately(m_Controller.height, m_TargetCharacterHeight))
             {
                 // resize the capsule and adjust camera position
                 m_Controller.height = Mathf.Lerp(m_Controller.height, m_TargetCharacterHeight,
-                    CrouchingSharpness * Time.deltaTime);
+                    crouchingSharpness * Time.deltaTime);
                 m_Controller.center = Vector3.up * m_Controller.height * 0.5f;
-                PlayerCamera.transform.localPosition = Vector3.Lerp(PlayerCamera.transform.localPosition,
-                    Vector3.up * m_TargetCharacterHeight * CameraHeightRatio, CrouchingSharpness * Time.deltaTime);
-                m_Actor.AimPoint.transform.localPosition = m_Controller.center;
+                playerCamera.transform.localPosition = Vector3.Lerp(playerCamera.transform.localPosition,
+                    Vector3.up * m_TargetCharacterHeight * cameraHeightRatio, crouchingSharpness * Time.deltaTime);
+                m_Actor.aimPoint.transform.localPosition = m_Controller.center;
             }
         }
 
@@ -457,7 +432,7 @@ namespace FPS.GamePlay
             // set appropriate heights
             if (crouched)
             {
-                m_TargetCharacterHeight = CapsuleHeightCrouching;
+                m_TargetCharacterHeight = capsuleHeightCrouching;
             }
             else
             {
@@ -466,7 +441,7 @@ namespace FPS.GamePlay
                 {
                     Collider[] standingOverlaps = Physics.OverlapCapsule(
                         GetCapsuleBottomHemisphere(),
-                        GetCapsuleTopHemisphere(CapsuleHeightStanding),
+                        GetCapsuleTopHemisphere(capsuleHeightStanding),
                         m_Controller.radius,
                         -1,
                         QueryTriggerInteraction.Ignore);
@@ -479,15 +454,15 @@ namespace FPS.GamePlay
                     }
                 }
 
-                m_TargetCharacterHeight = CapsuleHeightStanding;
+                m_TargetCharacterHeight = capsuleHeightStanding;
             }
 
-            if (OnStanceChanged != null)
+            if (onStanceChanged != null)
             {
-                OnStanceChanged.Invoke(crouched);
+                onStanceChanged.Invoke(crouched);
             }
 
-            IsCrouching = crouched;
+            isCrouching = crouched;
             return true;
         }
     }

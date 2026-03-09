@@ -1,6 +1,8 @@
 using FPS.GamePlay.Weapon.Base;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace FPS.GamePlay.Weapon
 {
@@ -11,57 +13,107 @@ namespace FPS.GamePlay.Weapon
         Charge,
     }
 
-    [System.Serializable]
     public struct CrosshairData
     {
-        [Tooltip("The image that will be used for this weapon's crosshair")]
-        public Sprite CrosshairSprite;
+        public Sprite crosshairSprite;
 
-        [Tooltip("The size of the crosshair image")]
-        public int CrosshairSize;
+        public int crosshairSize;
 
-        [Tooltip("The color of the crosshair image")]
-        public Color CrosshairColor;
+        public Color crosshairColor;
     }
 
     public class WeaponCore : MonoBehaviour
     {
         [Header("Information")]
-        public string WeaponName;
+        public string weaponName;
 
-        public Sprite WeaponIcon;
-        public Transform WeaponMuzzle;
-        public CrosshairData CrosshairDataDefault;
+        public Sprite weaponIcon;
+
+        public Transform weaponMuzzle;
+
+        public float recoilForce = 1;
+
+        public CrosshairData crosshairDataDefault;
+
+        public GameObject sourcePrefab;
+
+        public Vector3 aimOffset;
+
+        public float aimZoomRatio;
+
+        public GameObject weaponRoot;
 
         [Header("Modules")]
-        public WeaponFireModule FireModule;
+        public WeaponFireModule fireModule;
 
-        public WeaponAmmoModule AmmoModule;
-        public WeaponFXModule FXModule;
+        public WeaponAmmoModule ammoModule;
 
-        public UnityAction OnShoot;
+        public WeaponFXModule fxModule;
+
+        public UnityAction onShoot;
+        public GameObject owner { get; private set; }
+
+        private Vector3 m_LastMuzzlePosition;
+        public Vector3 muzzleWorldVelocity { get; private set; }
+
+        public bool isWeaponActive { get; private set; }
 
         void Awake()
         {
-            // 自动获取挂载在同一个 GameObject 上的模块
-            if (FireModule == null) FireModule = GetComponent<WeaponFireModule>();
-            if (AmmoModule == null) AmmoModule = GetComponent<WeaponAmmoModule>();
-            if (FXModule == null) FXModule = GetComponent<WeaponFXModule>();
+            if (fireModule == null)
+            {
+                fireModule = GetComponent<WeaponFireModule>();
+            }
+            if (ammoModule == null)
+            {
+                ammoModule = GetComponent<WeaponAmmoModule>();
+            }
+            if (fxModule == null)
+            {
+                fxModule = GetComponent<WeaponFXModule>();
+            }
         }
 
-        // 外部（如玩家控制器）调用此方法传入输入状态
-        public void HandleShootInputs(bool inputDown, bool inputHeld, bool inputUp)
+        public void SetOwner(GameObject newOwner)
         {
-            if (FireModule == null) return;
+            owner = newOwner;
+        }
+
+        public bool HandleShootInputs(bool inputDown, bool inputHeld, bool inputUp)
+        {
+            if (fireModule == null) return false;
 
             // 让开火模块决定是否应该射击，并传入弹药模块供其检查和消耗
-            bool didShoot = FireModule.ProcessInput(inputDown, inputHeld, inputUp, AmmoModule, WeaponMuzzle);
+            var didShoot = fireModule.ProcessInput(inputDown, inputHeld, inputUp, this);
 
             if (didShoot)
             {
-                if (FXModule != null) FXModule.PlayShootFX(WeaponMuzzle);
-                OnShoot?.Invoke();
+                onShoot?.Invoke();
+                return true;
             }
+            return false;
+        }
+
+        private void Update()
+        {
+            if (Time.deltaTime > 0)
+            {
+                var position = weaponMuzzle.position;
+                muzzleWorldVelocity = (position - m_LastMuzzlePosition) / Time.deltaTime;
+                m_LastMuzzlePosition = position;
+            }
+        }
+
+        public void ShowWeapon(bool show)
+        {
+            weaponRoot.SetActive(show);
+
+            if (show)
+            {
+                fxModule.PlayChangeWeaponSfx();
+            }
+
+            isWeaponActive = show;
         }
     }
 }
