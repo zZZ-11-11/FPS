@@ -1,5 +1,5 @@
 ﻿using System;
-using FPS.GamePlay.Weapon.Base;
+using FPS.GamePlay.Base;
 using UnityEngine;
 
 namespace FPS.GamePlay.Weapon

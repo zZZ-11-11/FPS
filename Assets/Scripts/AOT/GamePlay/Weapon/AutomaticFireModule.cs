@@ -1,4 +1,4 @@
-﻿using FPS.GamePlay.Weapon.Base;
+﻿using FPS.GamePlay.Base;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -14,9 +14,6 @@ namespace FPS.GamePlay.Weapon
 
         [Tooltip("每次射击消耗的弹药数量")]
         public float ammoPerShot = 1;
-
-        [Tooltip("每次射击的弹道偏移角度")]
-        public float bulletSpreadAngle = 0f;
 
         public override bool ProcessInput(bool inputDown, bool inputHeld, bool inputUp, WeaponCore weaponCore)
         {

@@ -1,5 +1,5 @@
 ﻿using System.Collections;
-using FPS.GamePlay.Weapon.Base;
+using FPS.GamePlay.Base;
 using UnityEngine;
 
 namespace FPS.GamePlay.Weapon
@@ -14,9 +14,6 @@ namespace FPS.GamePlay.Weapon
 
         [Tooltip("同一轮点射中，两发子弹之间的间隔时间（秒）")]
         public float delayBetweenBurstShots = 0.1f;
-
-        [Tooltip("子弹散布角度")]
-        public float bulletSpreadAngle = 0f;
 
         [Header("Ammo Settings")]
         [Tooltip("每发子弹消耗的弹药量")]
