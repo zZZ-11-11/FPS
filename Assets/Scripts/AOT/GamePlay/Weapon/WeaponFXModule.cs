@@ -45,7 +45,7 @@ namespace FPS.GamePlay.Weapon
             }
         }
 
-        public void PlayChangeWeaponSfx()
+        public void PlayChangeWeaponFX()
         {
             if (changeWeaponSfx != null)
             {

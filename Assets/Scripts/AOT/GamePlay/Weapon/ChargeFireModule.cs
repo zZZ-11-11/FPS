@@ -1,4 +1,4 @@
-﻿using FPS.GamePlay.Weapon.Base;
+﻿using FPS.GamePlay.Base;
 using UnityEngine;
 
 namespace FPS.GamePlay.Weapon
@@ -10,8 +10,6 @@ namespace FPS.GamePlay.Weapon
 
         [Tooltip("达到满充能时，射出的最大弹体数量（或者代表伤害倍率）")]
         public int maxBulletsPerShot = 1;
-
-        public float bulletSpreadAngle = 0f;
 
         [Header("Charge Parameters")]
         [Tooltip("充能达到最大值所需的时间（秒）")]

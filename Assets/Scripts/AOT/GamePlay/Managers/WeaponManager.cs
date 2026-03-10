@@ -126,12 +126,13 @@ namespace FPS.GamePlay
 
         void Update()
         {
-            // shoot handling
+            // 只有武器非换弹才处理换弹、瞄准、切枪和射击输入
             WeaponCore activeWeapon = GetActiveWeapon();
 
             if (activeWeapon != null && activeWeapon.ammoModule.isReloading)
                 return;
 
+            //有武器且武器正常举起才处理换弹、瞄准、和射击输入
             if (activeWeapon != null && m_WeaponSwitchState == WeaponSwitchState.Up)
             {
                 if (!activeWeapon.ammoModule.autoRegenerate && m_InputHandler.GetReloadButtonDown() && activeWeapon.ammoModule.GetCurrentAmmoRatio() < 1.0f)
@@ -140,16 +141,15 @@ namespace FPS.GamePlay
                     activeWeapon.ammoModule.StartReload();
                     return;
                 }
-                // handle aiming down sights
+
                 IsAiming = m_InputHandler.GetAimInputHeld();
 
-                // handle shooting
                 var hasFired = activeWeapon.HandleShootInputs(
                     m_InputHandler.GetFireInputDown(),
                     m_InputHandler.GetFireInputHeld(),
                     m_InputHandler.GetFireInputReleased());
 
-                // Handle accumulating recoil
+                // 计算后坐力
                 if (hasFired)
                 {
                     m_AccumulatedRecoil += Vector3.back * activeWeapon.recoilForce;
@@ -157,7 +157,7 @@ namespace FPS.GamePlay
                 }
             }
 
-            // weapon switch handling
+            // 处理武器切换
             if (!IsAiming &&
                 (activeWeapon == null || !activeWeapon.fireModule.isCharging) &&
                 (m_WeaponSwitchState == WeaponSwitchState.Up || m_WeaponSwitchState == WeaponSwitchState.Down))
@@ -179,7 +179,7 @@ namespace FPS.GamePlay
                 }
             }
 
-            // Pointing at enemy handling
+            // 射线检测准心是否瞄准敌人
             IsPointingAtEnemy = false;
             if (activeWeapon)
             {
@@ -194,7 +194,6 @@ namespace FPS.GamePlay
             }
         }
 
-        // Update various animated features in LateUpdate because it needs to override the animated arm position
         void LateUpdate()
         {
             UpdateWeaponAiming();
@@ -207,22 +206,18 @@ namespace FPS.GamePlay
                 m_WeaponMainLocalPosition + m_WeaponBobLocalPosition + m_WeaponRecoilLocalPosition;
         }
 
-        // Sets the FOV of the main camera and the weapon camera simultaneously
         public void SetFov(float fov)
         {
             m_PlayerCharacterController.playerCamera.fieldOfView = fov;
             WeaponCamera.fieldOfView = fov * WeaponFovMultiplier;
         }
 
-        // Iterate on all weapon slots to find the next valid weapon to switch to
         public void SwitchWeapon(bool ascendingOrder)
         {
             int newWeaponIndex = -1;
             int closestSlotDistance = m_WeaponSlots.Length;
             for (int i = 0; i < m_WeaponSlots.Length; i++)
             {
-                // If the weapon at this slot is valid, calculate its "distance" from the active slot index (either in ascending or descending order)
-                // and select it if it's the closest distance yet
                 if (i != ActiveWeaponIndex && GetWeaponAtSlotIndex(i) != null)
                 {
                     int distanceToActiveIndex = GetDistanceBetweenWeaponSlots(ActiveWeaponIndex, i, ascendingOrder);
@@ -239,7 +234,7 @@ namespace FPS.GamePlay
             SwitchToWeaponIndex(newWeaponIndex);
         }
 
-        // Switches to the given weapon index in weapon slots if the new index is a valid weapon that is different from our current one
+        //切换具体下标的武器，如果本来无武器，则插槽设为放下武器位置，记录要切换的武器索引，将状态设为PutUpNew，因为可以直接举起，否则设为PutDownPrevious，先放下再举起
         public void SwitchToWeaponIndex(int newWeaponIndex, bool force = false)
         {
             if (force || (newWeaponIndex != ActiveWeaponIndex && newWeaponIndex >= 0))
@@ -269,9 +264,9 @@ namespace FPS.GamePlay
             }
         }
 
+        //判断预设体是否已生成过武器，是则返回具体武器对象。
         public WeaponCore HasWeapon(WeaponCore weaponPrefab)
         {
-            // Checks if we already have a weapon coming from the specified prefab
             for (var index = 0; index < m_WeaponSlots.Length; index++)
             {
                 var w = m_WeaponSlots[index];
@@ -284,7 +279,7 @@ namespace FPS.GamePlay
             return null;
         }
 
-        // Updates weapon position and camera FoV for the aiming transition
+        //如果武器为正常举起状态，判断是否有武器并瞄准，是则插值武器位置和FOV至瞄准，否则插值至正常状态
         void UpdateWeaponAiming()
         {
             if (m_WeaponSwitchState == WeaponSwitchState.Up)
@@ -308,7 +303,7 @@ namespace FPS.GamePlay
             }
         }
 
-        // Updates the weapon bob animation based on character speed
+        //根据玩家速度插值改变抖动幅度，垂直抖动频率是水平的两倍，并且是正的保证武器不会掉出屏幕。
         void UpdateWeaponBob()
         {
             if (Time.deltaTime > 0f)
@@ -329,7 +324,6 @@ namespace FPS.GamePlay
                 m_WeaponBobFactor =
                     Mathf.Lerp(m_WeaponBobFactor, characterMovementFactor, BobSharpness * Time.deltaTime);
 
-                // Calculate vertical and horizontal weapon bob values based on a sine function
                 float bobAmount = IsAiming ? AimingBobAmount : DefaultBobAmount;
                 float frequency = BobFrequency;
                 float hBobValue = Mathf.Sin(Time.time * frequency) * bobAmount * m_WeaponBobFactor;
@@ -344,7 +338,7 @@ namespace FPS.GamePlay
             }
         }
 
-        // Updates the weapon recoil animation
+        //计算后坐力位置，坐标轴上是负的，所以目前位置大于计算位置则插值，否则插值回正常位置，回正过程中把计算位置更新为本帧的结束位置。
         void UpdateWeaponRecoil()
         {
             // if the accumulated recoil is further away from the current position, make the current position move towards the recoil target
@@ -362,10 +356,9 @@ namespace FPS.GamePlay
             }
         }
 
-        // Updates the animated transition of switching weapons
         void UpdateWeaponSwitching()
         {
-            // Calculate the time ratio (0 to 1) since weapon switch was triggered
+            // 计算武器放下/抬起的进度
             float switchingTimeFactor = 0f;
             if (WeaponSwitchDelay == 0f)
             {
@@ -376,7 +369,8 @@ namespace FPS.GamePlay
                 switchingTimeFactor = Mathf.Clamp01((Time.time - m_TimeStartedWeaponSwitch) / WeaponSwitchDelay);
             }
 
-            // Handle transiting to new switch state
+            // 动作完成，如果是放下完成，将旧武器隐藏，将激活武器设为新武器，重置动作完成度，如果武器存在，将动作变为举起，否则设为放下；
+            // 如果是举起完成，则将状态变为正常举起
             if (switchingTimeFactor >= 1f)
             {
                 if (m_WeaponSwitchState == WeaponSwitchState.PutDownPrevious)
@@ -405,7 +399,6 @@ namespace FPS.GamePlay
                     }
                     else
                     {
-                        // if new weapon is null, don't follow through with putting weapon back up
                         m_WeaponSwitchState = WeaponSwitchState.Down;
                     }
                 }
@@ -415,7 +408,7 @@ namespace FPS.GamePlay
                 }
             }
 
-            // Handle moving the weapon socket position for the animated weapon switching
+            // 根据切换时间插值举起和放下的位移
             if (m_WeaponSwitchState == WeaponSwitchState.PutDownPrevious)
             {
                 m_WeaponMainLocalPosition = Vector3.Lerp(DefaultWeaponPosition.localPosition,
@@ -428,9 +421,13 @@ namespace FPS.GamePlay
             }
         }
 
-        // Adds a weapon to our inventory
+        // 如果武器槽里没有预制体对应武器，在最近的插槽实例化武器，并把所有子物体设为武器层
         public bool AddWeapon(WeaponCore weaponPrefab)
         {
+            if (weaponPrefab == null)
+            {
+                return false;
+            }
             if (HasWeapon(weaponPrefab) != null)
             {
                 return false;
@@ -438,23 +435,21 @@ namespace FPS.GamePlay
 
             for (int i = 0; i < m_WeaponSlots.Length; i++)
             {
-                // only add the weapon if the slot is free
                 if (m_WeaponSlots[i] == null)
                 {
-                    // spawn the weapon prefab as child of the weapon socket
                     WeaponCore weaponInstance = Instantiate(weaponPrefab, WeaponParentSocket);
                     weaponInstance.transform.localPosition = Vector3.zero;
                     weaponInstance.transform.localRotation = Quaternion.identity;
 
-                    // Set owner to this gameObject so the weapon can alter projectile/damage logic accordingly
+                    //初始化并隐藏
                     weaponInstance.SetOwner(gameObject);
                     weaponInstance.sourcePrefab = weaponPrefab.gameObject;
                     weaponInstance.ShowWeapon(false);
 
-                    // Assign the first person layer to the weapon
+                    // 设置层级 FpsWeaponLayer.value是位表示，layerIndex则为十进制索引
                     int layerIndex =
                         Mathf.RoundToInt(Mathf.Log(FpsWeaponLayer.value,
-                            2)); // This function converts a layermask to a layer index
+                            2));
                     foreach (Transform t in weaponInstance.gameObject.GetComponentsInChildren<Transform>(true))
                     {
                         t.gameObject.layer = layerIndex;
@@ -471,7 +466,7 @@ namespace FPS.GamePlay
                 }
             }
 
-            // Handle auto-switching to weapon if no weapons currently
+            // 如果现在没有武器，就切换武器
             if (GetActiveWeapon() == null)
             {
                 SwitchWeapon(true);
@@ -528,8 +523,6 @@ namespace FPS.GamePlay
             return null;
         }
 
-        // Calculates the "distance" between two weapon slot indexes
-        // For example: if we had 5 weapon slots, the distance between slots #2 and #4 would be 2 in ascending order, and 3 in descending order
         int GetDistanceBetweenWeaponSlots(int fromSlotIndex, int toSlotIndex, bool ascendingOrder)
         {
             int distanceBetweenSlots = 0;

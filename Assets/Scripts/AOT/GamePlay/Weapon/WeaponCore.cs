@@ -1,18 +1,9 @@
-using FPS.GamePlay.Weapon.Base;
-using UnityEditor;
+using FPS.GamePlay.Base;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 namespace FPS.GamePlay.Weapon
 {
-    public enum WeaponShootType
-    {
-        Manual,
-        Automatic,
-        Charge,
-    }
-
     public struct CrosshairData
     {
         public Sprite crosshairSprite;
@@ -29,19 +20,25 @@ namespace FPS.GamePlay.Weapon
 
         public Sprite weaponIcon;
 
-        public Transform weaponMuzzle;
-
-        public float recoilForce = 1;
-
         public CrosshairData crosshairDataDefault;
 
-        public GameObject sourcePrefab;
+        public CrosshairData crosshairDataTargetInSight;
+
+        [Header("Internal References")]
+        public GameObject weaponRoot;
+
+        public Transform weaponMuzzle;
+
+        [Header("Shoot Parameters")]
+        [Range(0f, 2f)]
+        public float recoilForce = 1;
+
+        [Range(0f, 2f)]
+        public float aimZoomRatio;
 
         public Vector3 aimOffset;
 
-        public float aimZoomRatio;
-
-        public GameObject weaponRoot;
+        public GameObject sourcePrefab;
 
         [Header("Modules")]
         public WeaponFireModule fireModule;
@@ -110,7 +107,7 @@ namespace FPS.GamePlay.Weapon
 
             if (show)
             {
-                fxModule.PlayChangeWeaponSfx();
+                fxModule.PlayChangeWeaponFX();
             }
 
             isWeaponActive = show;
