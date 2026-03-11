@@ -73,6 +73,7 @@ GameObject:
   - component: {fileID: 7040421860313304863}
   - component: {fileID: 4705409593941630756}
   - component: {fileID: 3186833177985360651}
+  - component: {fileID: 6434538556774826785}
   - component: {fileID: 3034757289762281461}
   - component: {fileID: 8695067349305870026}
   - component: {fileID: 5467159114776008654}
@@ -136,8 +137,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc0d6dcf685ebc34986ba250b089f101, type: 3}
   m_Name: 
   m_EditorClassIdentifier: AOT::FPS.GamePlay.Weapon.WeaponCore
-  weaponName: 
-  weaponIcon: {fileID: 0}
+  weaponName: "\u7535\u5B50\u67AA"
+  weaponIcon: {fileID: 21300000, guid: 3c187e19c32c13542ba8a0c1a3a88ece, type: 3}
   weaponRoot: {fileID: 8071048040796085127}
   weaponMuzzle: {fileID: 6660174481160181044}
   recoilForce: 1
@@ -147,6 +148,103 @@ MonoBehaviour:
   fireModule: {fileID: 0}
   ammoModule: {fileID: 0}
   fxModule: {fileID: 0}
+--- !u!82 &6434538556774826785
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6275840740986921364}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 243115921504442520, guid: fcc71635aab95ff4fbdf1880bf2afa2f, type: 2}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!82 &3034757289762281461
 AudioSource:
   m_ObjectHideFlags: 0
@@ -156,7 +254,7 @@ AudioSource:
   m_GameObject: {fileID: 6275840740986921364}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 243115921504442520, guid: fcc71635aab95ff4fbdf1880bf2afa2f, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
@@ -258,7 +356,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: AOT::FPS.GamePlay.Weapon.WeaponFXModule
   shootSfx: {fileID: 8300000, guid: be87267ec54c5264daffd2ffeb91d6a7, type: 3}
   changeWeaponSfx: {fileID: 8300000, guid: 7b83d61917ac1224f942a0609b1221f2, type: 3}
-  muzzleFlashPrefab: {fileID: 0}
+  shootAudioSource: {fileID: 3034757289762281461}
+  changeAudioSource: {fileID: 6434538556774826785}
+  muzzleFlashPrefab: {fileID: 748781637555137343, guid: 9f671b22f25370048a18fb1f821294ec, type: 3}
   weaponAnimator: {fileID: 0}
 --- !u!114 &5467159114776008654
 MonoBehaviour:
@@ -274,7 +374,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: AOT::FPS.GamePlay.Weapon.AutomaticFireModule
   delayBetweenShots: 0.5
   bulletSpreadAngle: 10
-  projectilePrefab: {fileID: 0}
+  projectilePrefab: {fileID: 8259049210725633733, guid: 3c6b27d949cdda749892906e1f1d1b27, type: 3}
   bulletsPerShot: 1
   ammoPerShot: 1
 --- !u!114 &496848228146045396

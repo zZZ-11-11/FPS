@@ -25,16 +25,16 @@ namespace FPS.Game
         public static void CreateSfx(AudioClip clip, Vector3 position, AudioGroups audioGroup, float spatialBlend,
             float rolloffDistanceMin = 1f)
         {
-            GameObject impactSfxInstance = new GameObject();
+            var impactSfxInstance = new GameObject();
             impactSfxInstance.transform.position = position;
-            AudioSource source = impactSfxInstance.AddComponent<AudioSource>();
+            var source = impactSfxInstance.AddComponent<AudioSource>();
             source.clip = clip;
             source.spatialBlend = spatialBlend;
             source.minDistance = rolloffDistanceMin;
             source.outputAudioMixerGroup = GetAudioGroup(audioGroup);
             source.Play();
 
-            TimedSelfDestruct timedSelfDestruct = impactSfxInstance.AddComponent<TimedSelfDestruct>();
+            var timedSelfDestruct = impactSfxInstance.AddComponent<TimedSelfDestruct>();
             timedSelfDestruct.lifeTime = clip.length;
         }
 
