@@ -152,7 +152,7 @@ namespace FPS.GamePlay
 
             m_Controller.enableOverlapRecovery = true;
 
-            m_Health.OnDie += OnDie;
+            m_Health.onDie += OnDie;
 
             // force the crouch state to false when starting
             SetCrouchingState(false, true);

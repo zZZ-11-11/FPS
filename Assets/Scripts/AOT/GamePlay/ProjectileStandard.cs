@@ -1,64 +1,66 @@
 ﻿using System.Collections.Generic;
 using FPS.Game;
+using FPS.Game.Shared;
 using FPS.GamePlay.Base;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace FPS.GamePlay
 {
     public class ProjectileStandard : ProjectileBase
     {
         [Header("General")]
-        [Tooltip("Radius of this projectile's collision detection")]
-        public float Radius = 0.01f;
+        [Tooltip("碰撞检测半径")]
+        public float radius = 0.01f;
 
-        [Tooltip("Transform representing the root of the projectile (used for accurate collision detection)")]
-        public Transform Root;
+        [Tooltip("子弹根部")]
+        public Transform root;
 
-        [Tooltip("Transform representing the tip of the projectile (used for accurate collision detection)")]
-        public Transform Tip;
+        [Tooltip("子弹尖尖")]
+        public Transform tip;
 
-        [Tooltip("LifeTime of the projectile")]
-        public float MaxLifeTime = 5f;
+        [Tooltip("生存时间")]
+        public float maxLifeTime = 5f;
 
-        [Tooltip("VFX prefab to spawn upon impact")]
-        public GameObject ImpactVfx;
+        [Tooltip("碰撞特效")]
+        public GameObject impactVfx;
 
-        [Tooltip("LifeTime of the VFX before being destroyed")]
-        public float ImpactVfxLifetime = 5f;
+        [Tooltip("碰撞特效生存时间")]
+        public float impactVfxLifetime = 5f;
 
-        [Tooltip("Offset along the hit normal where the VFX will be spawned")]
-        public float ImpactVfxSpawnOffset = 0.1f;
+        [Tooltip("碰撞特效在法线上的偏移")]
+        public float impactVfxSpawnOffset = 0.1f;
 
-        [Tooltip("Clip to play on impact")]
-        public AudioClip ImpactSfxClip;
+        [FormerlySerializedAs("ImpactSfxClip")]
+        [Tooltip("碰撞音效")]
+        public AudioClip impactSfxClip;
 
-        [Tooltip("Layers this projectile can collide with")]
-        public LayerMask HittableLayers = -1;
+        [Tooltip("碰撞需要检测的层级")]
+        public LayerMask hittableLayers = -1;
 
         [Header("Movement")]
-        [Tooltip("Speed of the projectile")]
-        public float Speed = 20f;
+        [Tooltip("子弹速度")]
+        public float speed = 20f;
 
-        [Tooltip("Downward acceleration from gravity")]
-        public float GravityDownAcceleration = 0f;
+        [Tooltip("重力加速度")]
+        public float gravityDownAcceleration = 0f;
 
-        [Tooltip(
-            "Distance over which the projectile will correct its course to fit the intended trajectory (used to drift projectiles towards center of screen in First Person view). At values under 0, there is no correction")]
-        public float TrajectoryCorrectionDistance = -1;
+        [Tooltip("炮弹将自行修正其飞行路线以符合预期弹道的距离,小于0不会修正")]
+        public float trajectoryCorrectionDistance = -1;
 
-        [Tooltip("Determines if the projectile inherits the velocity that the weapon's muzzle had when firing")]
-        public bool InheritWeaponVelocity = false;
+        [Tooltip("是否继承武器速度")]
+        public bool inheritWeaponVelocity = false;
 
         [Header("Damage")]
-        [Tooltip("Damage of the projectile")]
-        public float Damage = 40f;
+        [Tooltip("子弹伤害")]
+        public float damage = 40f;
 
-        [Tooltip("Area of damage. Keep empty if you don<t want area damage")]
-        public DamageArea AreaOfDamage;
+        [Tooltip("范围伤害")]
+        public DamageArea areaOfDamage;
 
         [Header("Debug")]
-        [Tooltip("Color of the projectile radius debug view")]
-        public Color RadiusColor = Color.cyan * 0.2f;
+        [Tooltip("Debug颜色")]
+        public Color radiusColor = Color.cyan * 0.2f;
 
         ProjectileBase m_ProjectileBase;
         Vector3 m_LastRootPosition;
@@ -69,7 +71,7 @@ namespace FPS.GamePlay
         Vector3 m_ConsumedTrajectoryCorrectionVector;
         List<Collider> m_IgnoredColliders;
 
-        const QueryTriggerInteraction k_TriggerInteraction = QueryTriggerInteraction.Collide;
+        const QueryTriggerInteraction k_trigger_interaction = QueryTriggerInteraction.Collide;
 
         void OnEnable()
         {
@@ -77,47 +79,54 @@ namespace FPS.GamePlay
             DebugUtility.HandleErrorIfNullGetComponent<ProjectileBase, ProjectileStandard>(m_ProjectileBase, this,
                 gameObject);
 
-            m_ProjectileBase.OnShoot += OnShoot;
-
-            Destroy(gameObject, MaxLifeTime);
+            m_ProjectileBase.onShoot += OnShoot;
         }
 
-        new void OnShoot()
+        //初始化
+        void OnShoot()
         {
             m_ShootTime = Time.time;
-            m_LastRootPosition = Root.position;
-            m_Velocity = transform.forward * Speed;
+            m_LastRootPosition = root.position;
+            m_Velocity = transform.forward * speed;
             m_IgnoredColliders = new List<Collider>();
-            transform.position += m_ProjectileBase.InheritedMuzzleVelocity * Time.deltaTime;
 
-            // Ignore colliders of owner
-            Collider[] ownerColliders = m_ProjectileBase.Owner.GetComponentsInChildren<Collider>();
+            //开枪这一帧的移动
+            transform.position += GetWeaponVel() * Time.deltaTime;
+
+            var ownerColliders = m_ProjectileBase.owner.GetComponentsInChildren<Collider>();
             m_IgnoredColliders.AddRange(ownerColliders);
 
-            // Handle case of player shooting (make projectiles not go through walls, and remember center-of-screen trajectory)
-            PlayerWeaponsManager playerWeaponsManager = m_ProjectileBase.Owner.GetComponent<PlayerWeaponsManager>();
-            if (playerWeaponsManager)
+            // 防止子弹穿墙、让子弹向准心偏移
+            var weaponManager = m_ProjectileBase.owner.GetComponent<WeaponManager>();
+            if (weaponManager)
             {
                 m_HasTrajectoryOverride = true;
 
-                Vector3 cameraToMuzzle = (m_ProjectileBase.InitialPosition -
-                                          playerWeaponsManager.WeaponCamera.transform.position);
+                //相机到枪管向量
+                var weaponCameraTransform = weaponManager.WeaponCamera.transform;
+                var cameraToMuzzle = (m_ProjectileBase.initialPosition -
+                                      weaponCameraTransform.position);
 
+                //分解到xy上的偏移
                 m_TrajectoryCorrectionVector = Vector3.ProjectOnPlane(-cameraToMuzzle,
-                    playerWeaponsManager.WeaponCamera.transform.forward);
-                if (TrajectoryCorrectionDistance == 0)
+                    weaponCameraTransform.forward);
+
+                //如果无修正距离，直接从屏幕中间射出子弹
+                if (trajectoryCorrectionDistance == 0)
                 {
                     transform.position += m_TrajectoryCorrectionVector;
                     m_ConsumedTrajectoryCorrectionVector = m_TrajectoryCorrectionVector;
                 }
-                else if (TrajectoryCorrectionDistance < 0)
+
+                //如果修正距离小于0，无修正，直接沿着枪口forward方向发射
+                else if (trajectoryCorrectionDistance < 0)
                 {
                     m_HasTrajectoryOverride = false;
                 }
 
                 // 防穿墙检测：如果枪管插进了墙里，从眼睛向枪管打一条射线，如果中间有墙，立刻触发命中（防止玩家隔墙开枪）
-                if (Physics.Raycast(playerWeaponsManager.WeaponCamera.transform.position, cameraToMuzzle.normalized,
-                        out RaycastHit hit, cameraToMuzzle.magnitude, HittableLayers, k_TriggerInteraction))
+                if (Physics.Raycast(weaponManager.WeaponCamera.transform.position, cameraToMuzzle.normalized,
+                        out var hit, cameraToMuzzle.magnitude, hittableLayers, k_trigger_interaction))
                 {
                     if (IsHitValid(hit))
                     {
@@ -127,57 +136,77 @@ namespace FPS.GamePlay
             }
         }
 
+        private Vector3 GetWeaponVel()
+        {
+            // 获取武器速度
+            var weaponVel = m_ProjectileBase.inheritedMuzzleVelocity;
+
+            // 过滤掉向后的速度（如果速度方向和枪口朝向相反，点乘 < 0）
+            if (Vector3.Dot(weaponVel, transform.forward) < 0)
+            {
+                // 将速度投影到垂直于枪口朝向的平面上（只保留横向/上下的惯性，消除后退）
+                weaponVel = Vector3.ProjectOnPlane(weaponVel, transform.forward);
+            }
+            return weaponVel;
+        }
+
         void Update()
         {
-            // Move
-            transform.position += m_Velocity * Time.deltaTime;
-            if (InheritWeaponVelocity)
+            if (Time.time - m_ShootTime > maxLifeTime)
             {
-                transform.position += m_ProjectileBase.InheritedMuzzleVelocity * Time.deltaTime;
+                Destroy(gameObject);
+            }
+            transform.position += m_Velocity * Time.deltaTime;
+            //继承武器速度的位移
+            if (inheritWeaponVelocity)
+            {
+                transform.position += GetWeaponVel() * Time.deltaTime;
             }
 
-            // Drift towards trajectory override (this is so that projectiles can be centered 
-            // with the camera center even though the actual weapon is offset)
             if (m_HasTrajectoryOverride && m_ConsumedTrajectoryCorrectionVector.sqrMagnitude <
                 m_TrajectoryCorrectionVector.sqrMagnitude)
             {
-                Vector3 correctionLeft = m_TrajectoryCorrectionVector - m_ConsumedTrajectoryCorrectionVector;
-                float distanceThisFrame = (Root.position - m_LastRootPosition).magnitude;
-                Vector3 correctionThisFrame =
-                    (distanceThisFrame / TrajectoryCorrectionDistance) * m_TrajectoryCorrectionVector;
+                //剩下的修正位移
+                var correctionLeft = m_TrajectoryCorrectionVector - m_ConsumedTrajectoryCorrectionVector;
+                //当前帧的物理位移
+                var distanceThisFrame = (root.position - m_LastRootPosition).magnitude;
+                //当前帧的修正位移
+                var correctionThisFrame =
+                    (distanceThisFrame / trajectoryCorrectionDistance) * m_TrajectoryCorrectionVector;
                 correctionThisFrame = Vector3.ClampMagnitude(correctionThisFrame, correctionLeft.magnitude);
                 m_ConsumedTrajectoryCorrectionVector += correctionThisFrame;
 
-                // Detect end of correction
-                if (m_ConsumedTrajectoryCorrectionVector.sqrMagnitude == m_TrajectoryCorrectionVector.sqrMagnitude)
+                if (Mathf.Approximately(m_ConsumedTrajectoryCorrectionVector.sqrMagnitude, m_TrajectoryCorrectionVector.sqrMagnitude))
                 {
                     m_HasTrajectoryOverride = false;
                 }
 
+                //总位移
                 transform.position += correctionThisFrame;
             }
 
-            // Orient towards velocity
+            // m_Velocity只与初始速度和重力有关，此处用于模拟弹道下坠
             transform.forward = m_Velocity.normalized;
 
-            // Gravity
-            if (GravityDownAcceleration > 0)
+            if (gravityDownAcceleration > 0)
             {
-                // add gravity to the projectile velocity for ballistic effect
-                m_Velocity += Vector3.down * GravityDownAcceleration * Time.deltaTime;
+                m_Velocity += Vector3.down * gravityDownAcceleration * Time.deltaTime;
             }
 
-            // Hit detection
+            //碰撞检测
             {
-                RaycastHit closestHit = new RaycastHit();
-                closestHit.distance = Mathf.Infinity;
-                bool foundHit = false;
+                var closestHit = new RaycastHit
+                {
+                    distance = Mathf.Infinity
+                };
+                var foundHit = false;
 
-                // Sphere cast
-                Vector3 displacementSinceLastFrame = Tip.position - m_LastRootPosition;
-                RaycastHit[] hits = Physics.SphereCastAll(m_LastRootPosition, Radius,
-                    displacementSinceLastFrame.normalized, displacementSinceLastFrame.magnitude, HittableLayers,
-                    k_TriggerInteraction);
+                // 子弹穿过的距离等于这一帧的头部减去上一帧的尾部位置
+                var displacementSinceLastFrame = tip.position - m_LastRootPosition;
+
+                RaycastHit[] hits = Physics.SphereCastAll(m_LastRootPosition, radius,
+                    displacementSinceLastFrame.normalized, displacementSinceLastFrame.magnitude, hittableLayers,
+                    k_trigger_interaction);
                 foreach (var hit in hits)
                 {
                     if (IsHitValid(hit) && hit.distance < closestHit.distance)
@@ -189,10 +218,10 @@ namespace FPS.GamePlay
 
                 if (foundHit)
                 {
-                    // Handle case of casting while already inside a collider
+                    // 球体检测的起点，刚好已经位于一个碰撞体的内部时，直接在子弹当前位置生成特效
                     if (closestHit.distance <= 0f)
                     {
-                        closestHit.point = Root.position;
+                        closestHit.point = root.position;
                         closestHit.normal = -transform.forward;
                     }
 
@@ -200,24 +229,26 @@ namespace FPS.GamePlay
                 }
             }
 
-            m_LastRootPosition = Root.position;
+            m_LastRootPosition = root.position;
         }
 
         bool IsHitValid(RaycastHit hit)
         {
-            // ignore hits with an ignore component
+            // 忽略挂载了IgnoreHitDetection脚本的碰撞体,但消耗性能
+            /*
             if (hit.collider.GetComponent<IgnoreHitDetection>())
             {
                 return false;
             }
+            */
 
-            // ignore hits with triggers that don't have a Damageable component
-            if (hit.collider.isTrigger && hit.collider.GetComponent<Damageable>() == null)
+            // 忽略没有伤害脚本的触发器
+            if (hit.collider.isTrigger && !hit.collider.GetComponent<Damageable>())
             {
                 return false;
             }
 
-            // ignore hits with specific ignored colliders (self colliders, by default)
+            // 忽略特殊碰撞体，如子弹的来源
             if (m_IgnoredColliders != null && m_IgnoredColliders.Contains(hit.collider))
             {
                 return false;
@@ -228,47 +259,44 @@ namespace FPS.GamePlay
 
         void OnHit(Vector3 point, Vector3 normal, Collider collider)
         {
-            // damage
-            if (AreaOfDamage)
+            if (areaOfDamage)
             {
-                // area damage
-                AreaOfDamage.InflictDamageInArea(Damage, point, HittableLayers, k_TriggerInteraction,
-                    m_ProjectileBase.Owner);
+                areaOfDamage.InflictDamageInArea(damage, point, hittableLayers, k_trigger_interaction,
+                    m_ProjectileBase.owner);
             }
             else
             {
-                // point damage
-                Damageable damageable = collider.GetComponent<Damageable>();
+                var damageable = collider.GetComponent<Damageable>();
                 if (damageable)
                 {
-                    damageable.InflictDamage(Damage, false, m_ProjectileBase.Owner);
+                    damageable.InflictDamage(damage, false, m_ProjectileBase.owner);
                 }
             }
 
-            // impact vfx
-            if (ImpactVfx)
+            //生成碰撞特效
+            if (impactVfx)
             {
-                GameObject impactVfxInstance = Instantiate(ImpactVfx, point + (normal * ImpactVfxSpawnOffset),
+                var impactVfxInstance = Instantiate(impactVfx, point + (normal * impactVfxSpawnOffset),
                     Quaternion.LookRotation(normal));
-                if (ImpactVfxLifetime > 0)
+                if (impactVfxLifetime > 0)
                 {
-                    Destroy(impactVfxInstance.gameObject, ImpactVfxLifetime);
+                    Destroy(impactVfxInstance.gameObject, impactVfxLifetime);
                 }
             }
 
-            // impact sfx
-            if (ImpactSfxClip)
+            // 生成碰撞音效
+            if (impactSfxClip)
             {
-                AudioUtility.CreateSFX(ImpactSfxClip, point, AudioUtility.AudioGroups.Impact, 1f, 3f);
+                AudioUtility.CreateSfx(impactSfxClip, point, AudioUtility.AudioGroups.Impact, 1f, 3f);
             }
 
-            // Self Destruct
             Destroy(this.gameObject);
         }
 
         void OnDrawGizmosSelected()
         {
-            Gizmos.color = RadiusColor;
-            Gizmos.DrawSphere(transform.position, Radius);
+            Gizmos.color = radiusColor;
+            Gizmos.DrawSphere(transform.position, radius);
         }
     }
+}

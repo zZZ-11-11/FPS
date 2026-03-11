@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace FPS.GamePlay.Weapon
 {
@@ -12,7 +13,9 @@ namespace FPS.GamePlay.Weapon
 
         public AudioClip changeWeaponSfx;
 
-        private AudioSource m_AudioSource;
+        public AudioSource shootAudioSource;
+
+        public AudioSource changeAudioSource;
 
         [Header("Visuals")]
         public GameObject muzzleFlashPrefab;
@@ -23,14 +26,13 @@ namespace FPS.GamePlay.Weapon
 
         void Awake()
         {
-            m_AudioSource = GetComponent<AudioSource>();
         }
 
         public void PlayShootFX(Transform muzzle)
         {
             if (shootSfx != null)
             {
-                m_AudioSource.PlayOneShot(shootSfx);
+                shootAudioSource.PlayOneShot(shootSfx);
             }
 
             if (weaponAnimator != null)
@@ -40,7 +42,7 @@ namespace FPS.GamePlay.Weapon
 
             if (muzzleFlashPrefab != null && muzzle != null)
             {
-                GameObject flash = Instantiate(muzzleFlashPrefab, muzzle.position, muzzle.rotation);
+                var flash = Instantiate(muzzleFlashPrefab, muzzle.position, muzzle.rotation);
                 Destroy(flash, 2f);
             }
         }
@@ -49,7 +51,7 @@ namespace FPS.GamePlay.Weapon
         {
             if (changeWeaponSfx != null)
             {
-                m_AudioSource.PlayOneShot(changeWeaponSfx);
+                changeAudioSource.PlayOneShot(changeWeaponSfx);
             }
         }
     }

@@ -5,56 +5,54 @@ namespace FPS.Game.Shared
 {
     public class Health : MonoBehaviour
     {
-        public float MaxHealth = 10f;
+        public float maxHealth = 100f;
 
-        public float CriticalHealthRatio = 0.3f;
+        public float criticalHealthRatio = 0.3f;
 
-        public UnityAction<float, GameObject> OnDamaged;
-        public UnityAction<float> OnHealed;
-        public UnityAction OnDie;
+        public UnityAction<float, GameObject> onDamaged;
+        public UnityAction<float> onHealed;
+        public UnityAction onDie;
 
-        public float CurrentHealth { get; set; }
-        public bool Invincible { get; set; }
-        public bool CanPickup() => CurrentHealth < MaxHealth;
+        public float currentHealth { get; set; }
+        public bool invincible { get; set; }
+        public bool CanbeHealed() => currentHealth < maxHealth;
 
-        public float GetRatio() => CurrentHealth / MaxHealth;
-        public bool IsCritical() => GetRatio() <= CriticalHealthRatio;
+        public float GetRatio() => currentHealth / maxHealth;
+        public bool IsCritical() => GetRatio() <= criticalHealthRatio;
 
         bool m_IsDead;
 
         void Start()
         {
-            CurrentHealth = MaxHealth;
+            currentHealth = maxHealth;
         }
 
         public void Heal(float healAmount)
         {
-            float healthBefore = CurrentHealth;
-            CurrentHealth += healAmount;
-            CurrentHealth = Mathf.Clamp(CurrentHealth, 0f, MaxHealth);
+            var healthBefore = currentHealth;
+            currentHealth += healAmount;
+            currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
 
-            // call OnHeal action
-            float trueHealAmount = CurrentHealth - healthBefore;
+            var trueHealAmount = currentHealth - healthBefore;
             if (trueHealAmount > 0f)
             {
-                OnHealed?.Invoke(trueHealAmount);
+                onHealed?.Invoke(trueHealAmount);
             }
         }
 
         public void TakeDamage(float damage, GameObject damageSource)
         {
-            if (Invincible)
+            if (invincible)
                 return;
 
-            float healthBefore = CurrentHealth;
-            CurrentHealth -= damage;
-            CurrentHealth = Mathf.Clamp(CurrentHealth, 0f, MaxHealth);
+            var healthBefore = currentHealth;
+            currentHealth -= damage;
+            currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
 
-            // call OnDamage action
-            float trueDamageAmount = healthBefore - CurrentHealth;
+            var trueDamageAmount = healthBefore - currentHealth;
             if (trueDamageAmount > 0f)
             {
-                OnDamaged?.Invoke(trueDamageAmount, damageSource);
+                onDamaged?.Invoke(trueDamageAmount, damageSource);
             }
 
             HandleDeath();
@@ -62,10 +60,9 @@ namespace FPS.Game.Shared
 
         public void Kill()
         {
-            CurrentHealth = 0f;
+            currentHealth = 0f;
 
-            // call OnDamage action
-            OnDamaged?.Invoke(MaxHealth, null);
+            onDamaged?.Invoke(maxHealth, null);
 
             HandleDeath();
         }
@@ -75,11 +72,10 @@ namespace FPS.Game.Shared
             if (m_IsDead)
                 return;
 
-            // call OnDie action
-            if (CurrentHealth <= 0f)
+            if (currentHealth <= 0f)
             {
                 m_IsDead = true;
-                OnDie?.Invoke();
+                onDie?.Invoke();
             }
         }
     }
