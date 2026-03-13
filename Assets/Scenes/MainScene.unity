@@ -6463,6 +6463,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 7369448170708576210, guid: a2836f0676e46dc4685632e429aadbc8, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7369448170708576211, guid: a2836f0676e46dc4685632e429aadbc8, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -7526,9 +7530,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7369448170708576210, guid: a2836f0676e46dc4685632e429aadbc8, type: 3}
       insertIndex: -1
       addedObject: {fileID: 226035180}
-    - targetCorrespondingSourceObject: {fileID: 7369448170708576210, guid: a2836f0676e46dc4685632e429aadbc8, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 226035184}
   m_SourcePrefab: {fileID: 100100000, guid: a2836f0676e46dc4685632e429aadbc8, type: 3}
 --- !u!1 &226035172 stripped
 GameObject:
@@ -7749,8 +7750,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db51146b947e4b50b38aebd2ca34dbf6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: AOT::FPS.Game.Shared.Health
-  MaxHealth: 100
-  CriticalHealthRatio: 0.3
+  maxHealth: 100
+  criticalHealthRatio: 0.3
 --- !u!114 &226035181
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7766,7 +7767,7 @@ MonoBehaviour:
   StartingWeapons:
   - {fileID: 3186833177985360651, guid: 997f7e17c6bda2a4c803d76ea9172c6b, type: 3}
   - {fileID: 3186833177985360651, guid: 869b0770841277240a9bceb6620e715b, type: 3}
-  WeaponCamera: {fileID: 934946520}
+  WeaponCamera: {fileID: 1006441802}
   WeaponParentSocket: {fileID: 1658222533}
   DefaultWeaponPosition: {fileID: 2091968582}
   AimingWeaponPosition: {fileID: 2116081713}
@@ -7882,38 +7883,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &226035184
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 226035172}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 614850e0f5bacb34196419d7f3e3c3d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: AOT::FPS.GamePlay.WeaponManager
-  StartingWeapons: []
-  WeaponCamera: {fileID: 0}
-  WeaponParentSocket: {fileID: 0}
-  DefaultWeaponPosition: {fileID: 0}
-  AimingWeaponPosition: {fileID: 0}
-  DownWeaponPosition: {fileID: 0}
-  BobFrequency: 10
-  BobSharpness: 10
-  DefaultBobAmount: 0.05
-  AimingBobAmount: 0.02
-  RecoilSharpness: 50
-  MaxRecoilDistance: 0.5
-  RecoilRestitutionSharpness: 10
-  AimingAnimationSpeed: 10
-  DefaultFov: 60
-  WeaponFovMultiplier: 1
-  WeaponSwitchDelay: 1
-  FpsWeaponLayer:
-    serializedVersion: 2
-    m_Bits: 0
 --- !u!1 &315729424
 GameObject:
   m_ObjectHideFlags: 0

@@ -201,7 +201,6 @@ namespace FPS.GamePlay
             UpdateWeaponRecoil();
             UpdateWeaponSwitching();
 
-            // Set final weapon socket position based on all the combined animation influences
             WeaponParentSocket.localPosition =
                 m_WeaponMainLocalPosition + m_WeaponBobLocalPosition + m_WeaponRecoilLocalPosition;
         }
