@@ -212,7 +212,7 @@ namespace FPS.GamePlay
             // Tell the weapons manager to switch to a non-existing weapon in order to lower the weapon
             m_WeaponsManager.SwitchToWeaponIndex(-1, true);
 
-            EventManager.Broadcast(Events.PlayerDeathEvent);
+            EventManager.Broadcast(Events.playerDeathEvent);
         }
 
         void GroundCheck()

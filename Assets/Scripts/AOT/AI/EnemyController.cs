@@ -210,6 +210,7 @@ namespace FPS.AI
             }
         }
 
+        //如果伤害源非同类，检测模块强制发现敌人，如果当前状态非死亡，进入追逐状态，如果有音效则播放，标记此帧为已受伤
         void HandleDamage(float damage, GameObject damageSource)
         {
             if (damageSource && !damageSource.GetComponent<EnemyController>())

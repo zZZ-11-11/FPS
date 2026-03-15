@@ -1,135 +1,134 @@
-﻿using FPS.Game.Shared;
+﻿using System.Collections.Generic;
+using FPS.Game.Shared;
+using UnityEngine;
 
 namespace FPS.AI
 {
-    using System.Collections.Generic;
-    using UnityEngine;
-
-    namespace Unity.FPS.AI
+    [RequireComponent(typeof(EnemyController), typeof(Health))]
+    public sealed class EnemyVisualsController : MonoBehaviour
     {
-        [RequireComponent(typeof(EnemyController), typeof(Health))]
-        public class EnemyVisualsController : MonoBehaviour
+        [System.Serializable]
+        public struct RendererIndexData
         {
-            [System.Serializable]
-            public struct RendererIndexData
-            {
-                public Renderer Renderer;
-                public int MaterialIndex;
+            public Renderer renderer;
 
-                public RendererIndexData(Renderer renderer, int index)
-                {
-                    Renderer = renderer;
-                    MaterialIndex = index;
-                }
+            public int materialIndex;
+
+            public RendererIndexData(Renderer renderer, int index)
+            {
+                this.renderer = renderer;
+                materialIndex = index;
             }
+        }
 
-            [Header("Eye color")]
-            public Material EyeColorMaterial;
+        [Header("Eye color")]
+        public Material eyeColorMaterial;
 
-            [ColorUsageAttribute(true, true)]
-            public Color DefaultEyeColor;
+        [ColorUsage(true, true)]
+        public Color defaultEyeColor;
 
-            [ColorUsageAttribute(true, true)]
-            public Color AttackEyeColor;
+        [ColorUsage(true, true)]
+        public Color attackEyeColor;
 
-            [Header("Flash on hit")]
-            public Material BodyMaterial;
+        [Header("Flash on hit")]
+        public Material bodyMaterial;
 
-            [GradientUsageAttribute(true)]
-            public Gradient OnHitBodyGradient;
+        [GradientUsage(true)]
+        public Gradient onHitBodyGradient;
 
-            public float FlashOnHitDuration = 0.5f;
+        public float flashOnHitDuration = 0.5f;
 
-            [Header("VFX")]
-            public GameObject DeathVfx;
+        [Header("VFX")]
+        public GameObject deathVfx;
 
-            public Transform DeathVfxSpawnPoint;
+        public Transform deathVfxSpawnPoint;
 
-            EnemyController m_Enemy;
-            Health m_Health;
+        private EnemyController m_Enemy;
+        private Health m_Health;
 
-            List<RendererIndexData> m_BodyRenderers = new List<RendererIndexData>();
-            MaterialPropertyBlock m_BodyFlashMaterialPropertyBlock;
-            float m_LastTimeDamaged = float.NegativeInfinity;
+        private readonly List<RendererIndexData> m_BodyRenderers = new List<RendererIndexData>();
+        private MaterialPropertyBlock m_BodyFlashMaterialPropertyBlock;
+        private float m_LastTimeDamaged = float.NegativeInfinity;
 
-            RendererIndexData m_EyeRendererData;
-            MaterialPropertyBlock m_EyeColorMaterialPropertyBlock;
+        private RendererIndexData m_EyeRendererData;
+        private MaterialPropertyBlock m_EyeColorMaterialPropertyBlock;
 
-            void Start()
+        void Start()
+        {
+            m_Enemy = GetComponent<EnemyController>();
+            m_Health = GetComponent<Health>();
+
+            m_Enemy.onDetectedTarget += SetAttackEyeColor;
+            m_Enemy.onLostTarget += SetDefaultEyeColor;
+            m_Health.onDamaged += OnDamaged;
+            m_Health.onDie += OnDie;
+
+            InitializeRenderers();
+        }
+
+        void InitializeRenderers()
+        {
+            m_BodyFlashMaterialPropertyBlock = new MaterialPropertyBlock();
+
+            foreach (var renderer1 in GetComponentsInChildren<Renderer>(true))
             {
-                m_Enemy = GetComponent<EnemyController>();
-                m_Health = GetComponent<Health>();
-
-                // 订阅事件，解耦核心逻辑
-                m_Enemy.onDetectedTarget += SetAttackEyeColor;
-                m_Enemy.onLostTarget += SetDefaultEyeColor;
-                m_Health.onDamaged += OnDamaged;
-                m_Health.onDie += OnDie;
-
-                InitializeRenderers();
-            }
-
-            void InitializeRenderers()
-            {
-                m_BodyFlashMaterialPropertyBlock = new MaterialPropertyBlock();
-
-                foreach (var renderer in GetComponentsInChildren<Renderer>(true))
+                for (var i = 0; i < renderer1.sharedMaterials.Length; i++)
                 {
-                    for (int i = 0; i < renderer.sharedMaterials.Length; i++)
+                    if (renderer1.sharedMaterials[i] == eyeColorMaterial)
                     {
-                        if (renderer.sharedMaterials[i] == EyeColorMaterial)
-                            m_EyeRendererData = new RendererIndexData(renderer, i);
+                        m_EyeRendererData = new RendererIndexData(renderer1, i);
+                    }
 
-                        if (renderer.sharedMaterials[i] == BodyMaterial)
-                            m_BodyRenderers.Add(new RendererIndexData(renderer, i));
+                    if (renderer1.sharedMaterials[i] == bodyMaterial)
+                    {
+                        m_BodyRenderers.Add(new RendererIndexData(renderer1, i));
                     }
                 }
-
-                if (m_EyeRendererData.Renderer != null)
-                {
-                    m_EyeColorMaterialPropertyBlock = new MaterialPropertyBlock();
-                    SetDefaultEyeColor();
-                }
             }
 
-            void Update()
+            if (m_EyeRendererData.renderer != null)
             {
-                // 处理受击闪烁
-                Color currentColor = OnHitBodyGradient.Evaluate((Time.time - m_LastTimeDamaged) / FlashOnHitDuration);
-                m_BodyFlashMaterialPropertyBlock.SetColor("_EmissionColor", currentColor);
-                foreach (var data in m_BodyRenderers)
-                {
-                    data.Renderer.SetPropertyBlock(m_BodyFlashMaterialPropertyBlock, data.MaterialIndex);
-                }
+                m_EyeColorMaterialPropertyBlock = new MaterialPropertyBlock();
+                SetDefaultEyeColor();
             }
+        }
 
-            void OnDamaged(float damage, GameObject source) => m_LastTimeDamaged = Time.time;
-
-            void OnDie()
+        void Update()
+        {
+            var currentColor = onHitBodyGradient.Evaluate((Time.time - m_LastTimeDamaged) / flashOnHitDuration);
+            m_BodyFlashMaterialPropertyBlock.SetColor("_EmissionColor", currentColor);
+            foreach (var data in m_BodyRenderers)
             {
-                if (DeathVfx != null && DeathVfxSpawnPoint != null)
-                {
-                    var vfx = Instantiate(DeathVfx, DeathVfxSpawnPoint.position, Quaternion.identity);
-                    Destroy(vfx, 5f);
-                }
+                data.renderer.SetPropertyBlock(m_BodyFlashMaterialPropertyBlock, data.materialIndex);
             }
+        }
 
-            void SetDefaultEyeColor()
+        void OnDamaged(float damage, GameObject source) => m_LastTimeDamaged = Time.time;
+
+        void OnDie()
+        {
+            if (deathVfx != null && deathVfxSpawnPoint != null)
             {
-                if (m_EyeRendererData.Renderer != null)
-                {
-                    m_EyeColorMaterialPropertyBlock.SetColor("_EmissionColor", DefaultEyeColor);
-                    m_EyeRendererData.Renderer.SetPropertyBlock(m_EyeColorMaterialPropertyBlock, m_EyeRendererData.MaterialIndex);
-                }
+                var vfx = Instantiate(deathVfx, deathVfxSpawnPoint.position, Quaternion.identity);
+                Destroy(vfx, 5f);
             }
+        }
 
-            void SetAttackEyeColor()
+        void SetDefaultEyeColor()
+        {
+            if (m_EyeRendererData.renderer != null)
             {
-                if (m_EyeRendererData.Renderer != null)
-                {
-                    m_EyeColorMaterialPropertyBlock.SetColor("_EmissionColor", AttackEyeColor);
-                    m_EyeRendererData.Renderer.SetPropertyBlock(m_EyeColorMaterialPropertyBlock, m_EyeRendererData.MaterialIndex);
-                }
+                m_EyeColorMaterialPropertyBlock.SetColor("_EmissionColor", defaultEyeColor);
+                m_EyeRendererData.renderer.SetPropertyBlock(m_EyeColorMaterialPropertyBlock, m_EyeRendererData.materialIndex);
+            }
+        }
+
+        void SetAttackEyeColor()
+        {
+            if (m_EyeRendererData.renderer != null)
+            {
+                m_EyeColorMaterialPropertyBlock.SetColor("_EmissionColor", attackEyeColor);
+                m_EyeRendererData.renderer.SetPropertyBlock(m_EyeColorMaterialPropertyBlock, m_EyeRendererData.materialIndex);
             }
         }
     }
