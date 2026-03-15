@@ -6,64 +6,64 @@ namespace FPS.Game
 {
     public static class Events
     {
-        public static ObjectiveUpdateEvent ObjectiveUpdateEvent = new ObjectiveUpdateEvent();
-        public static AllObjectivesCompletedEvent AllObjectivesCompletedEvent = new AllObjectivesCompletedEvent();
-        public static GameOverEvent GameOverEvent = new GameOverEvent();
-        public static PlayerDeathEvent PlayerDeathEvent = new PlayerDeathEvent();
-        public static EnemyKillEvent EnemyKillEvent = new EnemyKillEvent();
-        public static PickupEvent PickupEvent = new PickupEvent();
-        public static AmmoPickupEvent AmmoPickupEvent = new AmmoPickupEvent();
-        public static DamageEvent DamageEvent = new DamageEvent();
-        public static DisplayMessageEvent DisplayMessageEvent = new DisplayMessageEvent();
+        public static readonly ObjectiveUpdateEvent objectiveUpdateEvent = new ObjectiveUpdateEvent();
+        public static AllObjectivesCompletedEvent allObjectivesCompletedEvent = new AllObjectivesCompletedEvent();
+        public static GameOverEvent gameOverEvent = new GameOverEvent();
+        public static readonly PlayerDeathEvent playerDeathEvent = new PlayerDeathEvent();
+        public static readonly EnemyKillEvent enemyKillEvent = new EnemyKillEvent();
+        public static PickupEvent pickupEvent = new PickupEvent();
+        public static AmmoPickupEvent ammoPickupEvent = new AmmoPickupEvent();
+        public static DamageEvent damageEvent = new DamageEvent();
+        public static readonly DisplayMessageEvent displayMessageEvent = new DisplayMessageEvent();
     }
 
-    public class ObjectiveUpdateEvent : GameEvent
+    public sealed class ObjectiveUpdateEvent : GameEvent
     {
-        public Objective Objective;
-        public string DescriptionText;
-        public string CounterText;
-        public bool IsComplete;
-        public string NotificationText;
+        public Objective objective;
+        public string descriptionText;
+        public string counterText;
+        public bool isComplete;
+        public string notificationText;
     }
 
-    public class AllObjectivesCompletedEvent : GameEvent
-    {
-    }
-
-    public class GameOverEvent : GameEvent
-    {
-        public bool Win;
-    }
-
-    public class PlayerDeathEvent : GameEvent
+    public sealed class AllObjectivesCompletedEvent : GameEvent
     {
     }
 
-    public class EnemyKillEvent : GameEvent
+    public sealed class GameOverEvent : GameEvent
     {
-        public GameObject Enemy;
-        public int RemainingEnemyCount;
+        public bool win;
     }
 
-    public class PickupEvent : GameEvent
+    public sealed class PlayerDeathEvent : GameEvent
     {
-        public GameObject Pickup;
     }
 
-    public class AmmoPickupEvent : GameEvent
+    public sealed class EnemyKillEvent : GameEvent
     {
-        public WeaponCore Weapon;
+        public GameObject enemy;
+        public int remainingEnemyCount;
     }
 
-    public class DamageEvent : GameEvent
+    public sealed class PickupEvent : GameEvent
     {
-        public GameObject Sender;
-        public float DamageValue;
+        public GameObject pickup;
     }
 
-    public class DisplayMessageEvent : GameEvent
+    public sealed class AmmoPickupEvent : GameEvent
     {
-        public string Message;
-        public float DelayBeforeDisplay;
+        public WeaponCore weapon;
+    }
+
+    public sealed class DamageEvent : GameEvent
+    {
+        public GameObject sender;
+        public float damageValue;
+    }
+
+    public sealed class DisplayMessageEvent : GameEvent
+    {
+        public string message;
+        public float delayBeforeDisplay;
     }
 }

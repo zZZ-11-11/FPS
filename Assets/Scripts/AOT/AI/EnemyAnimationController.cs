@@ -4,14 +4,17 @@ using UnityEngine;
 namespace FPS.AI
 {
     [RequireComponent(typeof(Animator))]
-    public class EnemyAnimationController : MonoBehaviour
+    public sealed class EnemyAnimationController : MonoBehaviour
     {
         private Animator m_Animator;
         private EnemyController m_EnemyController;
         private Health m_Health;
 
-        const string k_anim_attack_parameter = "Attack";
-        const string k_anim_on_damaged_parameter = "OnDamaged";
+        private const string k_anim_attack_parameter = "Attack";
+        private const string k_anim_on_damaged_parameter = "OnDamaged";
+
+        private static readonly int s_Attack = Animator.StringToHash(k_anim_attack_parameter);
+        private static readonly int s_OnDamaged = Animator.StringToHash(k_anim_on_damaged_parameter);
 
         void Awake()
         {
@@ -36,12 +39,18 @@ namespace FPS.AI
 
         private void PlayAttackAnimation()
         {
-            if (m_Animator) m_Animator.SetTrigger(k_anim_attack_parameter);
+            if (m_Animator)
+            {
+                m_Animator.SetTrigger(s_Attack);
+            }
         }
 
         private void PlayDamagedAnimation(float amount, GameObject source)
         {
-            if (m_Animator) m_Animator.SetTrigger(k_anim_on_damaged_parameter);
+            if (m_Animator)
+            {
+                m_Animator.SetTrigger(s_OnDamaged);
+            }
         }
     }
 }

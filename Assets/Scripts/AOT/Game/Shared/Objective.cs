@@ -28,20 +28,20 @@ namespace FPS.Game.Shared
         {
             OnObjectiveCreated?.Invoke(this);
 
-            DisplayMessageEvent displayMessage = Events.DisplayMessageEvent;
-            displayMessage.Message = Title;
-            displayMessage.DelayBeforeDisplay = 0.0f;
+            DisplayMessageEvent displayMessage = Events.displayMessageEvent;
+            displayMessage.message = Title;
+            displayMessage.delayBeforeDisplay = 0.0f;
             EventManager.Broadcast(displayMessage);
         }
 
         public void UpdateObjective(string descriptionText, string counterText, string notificationText)
         {
-            ObjectiveUpdateEvent evt = Events.ObjectiveUpdateEvent;
-            evt.Objective = this;
-            evt.DescriptionText = descriptionText;
-            evt.CounterText = counterText;
-            evt.NotificationText = notificationText;
-            evt.IsComplete = IsCompleted;
+            ObjectiveUpdateEvent evt = Events.objectiveUpdateEvent;
+            evt.objective = this;
+            evt.descriptionText = descriptionText;
+            evt.counterText = counterText;
+            evt.notificationText = notificationText;
+            evt.isComplete = IsCompleted;
             EventManager.Broadcast(evt);
         }
 
@@ -49,12 +49,12 @@ namespace FPS.Game.Shared
         {
             IsCompleted = true;
 
-            ObjectiveUpdateEvent evt = Events.ObjectiveUpdateEvent;
-            evt.Objective = this;
-            evt.DescriptionText = descriptionText;
-            evt.CounterText = counterText;
-            evt.NotificationText = notificationText;
-            evt.IsComplete = IsCompleted;
+            ObjectiveUpdateEvent evt = Events.objectiveUpdateEvent;
+            evt.objective = this;
+            evt.descriptionText = descriptionText;
+            evt.counterText = counterText;
+            evt.notificationText = notificationText;
+            evt.isComplete = IsCompleted;
             EventManager.Broadcast(evt);
 
             OnObjectiveCompleted?.Invoke(this);
