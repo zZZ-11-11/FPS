@@ -33,7 +33,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 748772070858800895}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -482,7 +482,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5652264842475954116}
   - component: {fileID: 6232609386273959775}
-  - component: {fileID: 5017310879824260518}
   - component: {fileID: 3212401824069999018}
   m_Layer: 6
   m_Name: WeaponCamera
@@ -557,14 +556,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!81 &5017310879824260518
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2549798212217422788}
-  m_Enabled: 1
 --- !u!114 &3212401824069999018
 MonoBehaviour:
   m_ObjectHideFlags: 0

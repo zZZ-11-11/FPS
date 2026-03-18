@@ -11,10 +11,10 @@ namespace FPS.AI
         private Health m_Health;
 
         private const string k_anim_attack_parameter = "Attack";
-        private const string k_anim_on_damaged_parameter = "OnDamaged";
+        private const string k_anim_damaged_parameter = "Damaged";
 
         private static readonly int s_Attack = Animator.StringToHash(k_anim_attack_parameter);
-        private static readonly int s_OnDamaged = Animator.StringToHash(k_anim_on_damaged_parameter);
+        private static readonly int s_Damaged = Animator.StringToHash(k_anim_damaged_parameter);
 
         void Awake()
         {
@@ -49,7 +49,7 @@ namespace FPS.AI
         {
             if (m_Animator)
             {
-                m_Animator.SetTrigger(s_OnDamaged);
+                m_Animator.SetTrigger(s_Damaged);
             }
         }
     }

@@ -1,10 +1,9 @@
 ﻿using FPS.GamePlay.Base;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace FPS.GamePlay.Weapon
 {
-    public class AutomaticFireModule : WeaponFireModule
+    public sealed class AutomaticFireModule : WeaponFireModule
     {
         [Tooltip("每次射击的弹道预制体")]
         public ProjectileBase projectilePrefab;
@@ -50,7 +49,7 @@ namespace FPS.GamePlay.Weapon
             var muzzle = weaponCore.weaponMuzzle;
 
             // 实际射击逻辑 (生成子弹)
-            for (int i = 0; i < bulletsPerShot; i++)
+            for (var i = 0; i < bulletsPerShot; i++)
             {
                 var shotDirection = GetSpreadDirection(muzzle);
                 var newProjectile = Instantiate(projectilePrefab, muzzle.position, Quaternion.LookRotation(shotDirection));
@@ -69,7 +68,7 @@ namespace FPS.GamePlay.Weapon
                 return shootTransform.forward;
             }
             var spreadAngleRatio = bulletSpreadAngle / 180f;
-            return Vector3.Slerp(shootTransform.forward, UnityEngine.Random.insideUnitSphere, spreadAngleRatio);
+            return Vector3.Slerp(shootTransform.forward, Random.insideUnitSphere, spreadAngleRatio);
         }
     }
 }

@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace FPS.GamePlay.Weapon
 {
@@ -49,7 +48,7 @@ namespace FPS.GamePlay.Weapon
 
         public void PlayChangeWeaponFX()
         {
-            if (changeWeaponSfx != null)
+            if (changeWeaponSfx != null && changeAudioSource != null)
             {
                 changeAudioSource.PlayOneShot(changeWeaponSfx);
             }

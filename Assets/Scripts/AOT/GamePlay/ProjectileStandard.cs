@@ -85,13 +85,24 @@ namespace FPS.GamePlay
         //初始化
         void OnShoot()
         {
+            //修复子弹过长导致视觉上的穿墙bug
+            var rootPosition = root.position;
+            var distance = tip.position - rootPosition;
+
+            if (CheckCollision(rootPosition, distance))
+            {
+                var allRenderers = GetComponentsInChildren<Renderer>();
+                foreach (var r in allRenderers)
+                {
+                    r.enabled = false;
+                }
+                return;
+            }
+
             m_ShootTime = Time.time;
-            m_LastRootPosition = root.position;
+
             m_Velocity = transform.forward * speed;
             m_IgnoredColliders = new List<Collider>();
-
-            //开枪这一帧的移动
-            transform.position += GetWeaponVel() * Time.deltaTime;
 
             var ownerColliders = m_ProjectileBase.owner.GetComponentsInChildren<Collider>();
             m_IgnoredColliders.AddRange(ownerColliders);
@@ -134,6 +145,61 @@ namespace FPS.GamePlay
                     }
                 }
             }
+            m_LastRootPosition = root.position;
+        }
+
+        void Update()
+        {
+            if (Time.time - m_ShootTime > maxLifeTime)
+            {
+                Destroy(gameObject);
+            }
+            var expectedDisplacement = m_Velocity * Time.deltaTime;
+            //继承武器速度的位移
+            if (inheritWeaponVelocity)
+            {
+                expectedDisplacement += GetWeaponVel() * Time.deltaTime;
+            }
+
+            if (m_HasTrajectoryOverride && m_ConsumedTrajectoryCorrectionVector.sqrMagnitude <
+                m_TrajectoryCorrectionVector.sqrMagnitude)
+            {
+                //剩下的修正位移
+                var correctionLeft = m_TrajectoryCorrectionVector - m_ConsumedTrajectoryCorrectionVector;
+                //当前帧的物理位移
+                var distanceThisFrame = expectedDisplacement.magnitude;
+                //当前帧的修正位移
+                var correctionThisFrame =
+                    (distanceThisFrame / trajectoryCorrectionDistance) * m_TrajectoryCorrectionVector;
+                correctionThisFrame = Vector3.ClampMagnitude(correctionThisFrame, correctionLeft.magnitude);
+                m_ConsumedTrajectoryCorrectionVector += correctionThisFrame;
+
+                if (Mathf.Approximately(m_ConsumedTrajectoryCorrectionVector.sqrMagnitude, m_TrajectoryCorrectionVector.sqrMagnitude))
+                {
+                    m_HasTrajectoryOverride = false;
+                }
+
+                //总位移
+                expectedDisplacement += correctionThisFrame;
+            }
+
+            // m_Velocity只与初始速度和重力有关，此处用于模拟弹道下坠
+            transform.forward = m_Velocity.normalized;
+
+            if (gravityDownAcceleration > 0)
+            {
+                m_Velocity += Vector3.down * gravityDownAcceleration * Time.deltaTime;
+            }
+
+            //碰撞检测
+            var displacementSinceLastFrame = tip.position + expectedDisplacement - m_LastRootPosition;
+            if (CheckCollision(m_LastRootPosition, displacementSinceLastFrame))
+            {
+                return;
+            }
+
+            transform.position += expectedDisplacement;
+            m_LastRootPosition = root.position;
         }
 
         private Vector3 GetWeaponVel()
@@ -150,86 +216,41 @@ namespace FPS.GamePlay
             return weaponVel;
         }
 
-        void Update()
+        private bool CheckCollision(Vector3 startPoint, Vector3 displacement)
         {
-            if (Time.time - m_ShootTime > maxLifeTime)
+            var closestHit = new RaycastHit
             {
-                Destroy(gameObject);
-            }
-            transform.position += m_Velocity * Time.deltaTime;
-            //继承武器速度的位移
-            if (inheritWeaponVelocity)
-            {
-                transform.position += GetWeaponVel() * Time.deltaTime;
-            }
+                distance = Mathf.Infinity
+            };
+            var foundHit = false;
 
-            if (m_HasTrajectoryOverride && m_ConsumedTrajectoryCorrectionVector.sqrMagnitude <
-                m_TrajectoryCorrectionVector.sqrMagnitude)
-            {
-                //剩下的修正位移
-                var correctionLeft = m_TrajectoryCorrectionVector - m_ConsumedTrajectoryCorrectionVector;
-                //当前帧的物理位移
-                var distanceThisFrame = (root.position - m_LastRootPosition).magnitude;
-                //当前帧的修正位移
-                var correctionThisFrame =
-                    (distanceThisFrame / trajectoryCorrectionDistance) * m_TrajectoryCorrectionVector;
-                correctionThisFrame = Vector3.ClampMagnitude(correctionThisFrame, correctionLeft.magnitude);
-                m_ConsumedTrajectoryCorrectionVector += correctionThisFrame;
+            var hits = Physics.SphereCastAll(startPoint, radius,
+                displacement.normalized, displacement.magnitude, hittableLayers,
+                k_trigger_interaction);
 
-                if (Mathf.Approximately(m_ConsumedTrajectoryCorrectionVector.sqrMagnitude, m_TrajectoryCorrectionVector.sqrMagnitude))
+            foreach (var hit in hits)
+            {
+                if (IsHitValid(hit) && hit.distance < closestHit.distance)
                 {
-                    m_HasTrajectoryOverride = false;
-                }
-
-                //总位移
-                transform.position += correctionThisFrame;
-            }
-
-            // m_Velocity只与初始速度和重力有关，此处用于模拟弹道下坠
-            transform.forward = m_Velocity.normalized;
-
-            if (gravityDownAcceleration > 0)
-            {
-                m_Velocity += Vector3.down * gravityDownAcceleration * Time.deltaTime;
-            }
-
-            //碰撞检测
-            {
-                var closestHit = new RaycastHit
-                {
-                    distance = Mathf.Infinity
-                };
-                var foundHit = false;
-
-                // 子弹穿过的距离等于这一帧的头部减去上一帧的尾部位置
-                var displacementSinceLastFrame = tip.position - m_LastRootPosition;
-
-                RaycastHit[] hits = Physics.SphereCastAll(m_LastRootPosition, radius,
-                    displacementSinceLastFrame.normalized, displacementSinceLastFrame.magnitude, hittableLayers,
-                    k_trigger_interaction);
-                foreach (var hit in hits)
-                {
-                    if (IsHitValid(hit) && hit.distance < closestHit.distance)
-                    {
-                        foundHit = true;
-                        closestHit = hit;
-                    }
-                }
-
-                if (foundHit)
-                {
-                    // 球体检测的起点，刚好已经位于一个碰撞体的内部时，直接在子弹当前位置生成特效
-                    if (closestHit.distance <= 0f)
-                    {
-                        closestHit.point = root.position;
-                        closestHit.normal = -transform.forward;
-                    }
-
-                    OnHit(closestHit.point, closestHit.normal, closestHit.collider);
+                    foundHit = true;
+                    closestHit = hit;
                 }
             }
 
-            m_LastRootPosition = root.position;
+            if (foundHit)
+            {
+                // 球体检测的起点，刚好已经位于一个碰撞体的内部时，直接在子弹当前位置生成特效
+                if (closestHit.distance <= 0f)
+                {
+                    closestHit.point = root.position;
+                    closestHit.normal = -transform.forward;
+                }
+
+                OnHit(closestHit.point, closestHit.normal, closestHit.collider);
+                return true;
+            }
+
+            return false;
         }
 
         bool IsHitValid(RaycastHit hit)

@@ -243,7 +243,6 @@ namespace FPS.GamePlay
                     {
                         isGrounded = true;
 
-                        print("distance:" + hit.distance);
                         // handle snapping to the ground
                         // if (hit.distance > m_Controller.skinWidth)
                         {
@@ -266,8 +265,6 @@ namespace FPS.GamePlay
 
             // vertical camera rotation
             {
-                print("m_CameraVerticalAngle=" + m_CameraVerticalAngle + "+" + m_InputHandler.GetLookInputsVertical() + "+" + " RotationSpeed:" + rotationSpeed + "+" + " RotationMultiplier:" +
-                      rotationMultiplier);
                 // add vertical inputs to the camera's vertical angle
                 m_CameraVerticalAngle += m_InputHandler.GetLookInputsVertical() * rotationSpeed * rotationMultiplier;
 
