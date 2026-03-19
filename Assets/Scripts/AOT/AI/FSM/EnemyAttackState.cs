@@ -7,7 +7,7 @@ namespace FPS.AI.FSM
         public void Enter(EnemyController enemy)
         {
             // 攻击时停止移动
-            enemy.navMeshAgent.isStopped = true; 
+            enemy.navMeshAgent.isStopped = true;
         }
 
         public void Update(EnemyController enemy)

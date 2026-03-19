@@ -54,7 +54,7 @@ MonoBehaviour:
   weaponIcon: {fileID: 0}
   weaponRoot: {fileID: 8624542080877045428}
   weaponMuzzle: {fileID: 7596845517201235805}
-  recoilForce: 1.01
+  recoilForce: 0
   aimZoomRatio: 0
   aimOffset: {x: 0, y: 0, z: 0}
   sourcePrefab: {fileID: 0}
@@ -70,7 +70,7 @@ AudioSource:
   m_GameObject: {fileID: 812139361164929956}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 243177779269262668, guid: fcc71635aab95ff4fbdf1880bf2afa2f, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
