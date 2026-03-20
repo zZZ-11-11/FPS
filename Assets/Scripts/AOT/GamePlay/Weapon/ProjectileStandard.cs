@@ -7,7 +7,7 @@ using UnityEngine.Serialization;
 
 namespace FPS.GamePlay
 {
-    public class ProjectileStandard : ProjectileBase
+    public sealed class ProjectileStandard : ProjectileBase
     {
         [Header("General")]
         [Tooltip("碰撞检测半径")]
@@ -43,13 +43,13 @@ namespace FPS.GamePlay
         public float speed = 20f;
 
         [Tooltip("重力加速度")]
-        public float gravityDownAcceleration = 0f;
+        public float gravityDownAcceleration;
 
         [Tooltip("炮弹将自行修正其飞行路线以符合预期弹道的距离,小于0不会修正")]
         public float trajectoryCorrectionDistance = -1;
 
         [Tooltip("是否继承武器速度")]
-        public bool inheritWeaponVelocity = false;
+        public bool inheritWeaponVelocity;
 
         [Header("Damage")]
         [Tooltip("子弹伤害")]
@@ -62,16 +62,18 @@ namespace FPS.GamePlay
         [Tooltip("Debug颜色")]
         public Color radiusColor = Color.cyan * 0.2f;
 
-        ProjectileBase m_ProjectileBase;
-        Vector3 m_LastRootPosition;
-        Vector3 m_Velocity;
-        bool m_HasTrajectoryOverride;
-        float m_ShootTime;
-        Vector3 m_TrajectoryCorrectionVector;
-        Vector3 m_ConsumedTrajectoryCorrectionVector;
-        List<Collider> m_IgnoredColliders;
+        private ProjectileBase m_ProjectileBase;
+        private Vector3 m_LastRootPosition;
+        private Vector3 m_Velocity;
+        private bool m_HasTrajectoryOverride;
+        private float m_ShootTime;
+        private Vector3 m_TrajectoryCorrectionVector;
+        private Vector3 m_ConsumedTrajectoryCorrectionVector;
+        private List<Collider> m_IgnoredColliders;
+        private readonly RaycastHit[] m_Hits = new RaycastHit[16];
 
-        const QueryTriggerInteraction k_trigger_interaction = QueryTriggerInteraction.Collide;
+        private
+            const QueryTriggerInteraction k_trigger_interaction = QueryTriggerInteraction.Collide;
 
         void OnEnable()
         {
@@ -85,7 +87,7 @@ namespace FPS.GamePlay
         //初始化
         void OnShoot()
         {
-            //修复子弹过长导致视觉上的穿墙bug
+            // 修复子弹过长导致视觉上的穿墙bug
             var rootPosition = root.position;
             var distance = tip.position - rootPosition;
 
@@ -100,51 +102,68 @@ namespace FPS.GamePlay
             }
 
             m_ShootTime = Time.time;
-
             m_Velocity = transform.forward * speed;
             m_IgnoredColliders = new List<Collider>();
 
             var ownerColliders = m_ProjectileBase.owner.GetComponentsInChildren<Collider>();
             m_IgnoredColliders.AddRange(ownerColliders);
 
-            // 防止子弹穿墙、让子弹向准心偏移
             var weaponManager = m_ProjectileBase.owner.GetComponent<WeaponManager>();
+            var enemyController = m_ProjectileBase.owner.GetComponent<FPS.AI.EnemyController>();
+
             if (weaponManager)
             {
+                // 玩家的弹道修正
                 m_HasTrajectoryOverride = true;
 
-                //相机到枪管向量
                 var weaponCameraTransform = weaponManager.WeaponCamera.transform;
-                var cameraToMuzzle = (m_ProjectileBase.initialPosition -
-                                      weaponCameraTransform.position);
+                var cameraToMuzzle = (m_ProjectileBase.initialPosition - weaponCameraTransform.position);
 
-                //分解到xy上的偏移
-                m_TrajectoryCorrectionVector = Vector3.ProjectOnPlane(-cameraToMuzzle,
-                    weaponCameraTransform.forward);
+                // 分解到xy上的偏移
+                m_TrajectoryCorrectionVector = Vector3.ProjectOnPlane(-cameraToMuzzle, weaponCameraTransform.forward);
 
-                //如果无修正距离，直接从屏幕中间射出子弹
                 if (trajectoryCorrectionDistance == 0)
                 {
                     transform.position += m_TrajectoryCorrectionVector;
                     m_ConsumedTrajectoryCorrectionVector = m_TrajectoryCorrectionVector;
                 }
-
-                //如果修正距离小于0，无修正，直接沿着枪口forward方向发射
                 else if (trajectoryCorrectionDistance < 0)
                 {
                     m_HasTrajectoryOverride = false;
                 }
 
-                // 防穿墙检测：如果枪管插进了墙里，从眼睛向枪管打一条射线，如果中间有墙，立刻触发命中（防止玩家隔墙开枪）
+                // 防穿墙检测
                 if (Physics.Raycast(weaponManager.WeaponCamera.transform.position, cameraToMuzzle.normalized,
                         out var hit, cameraToMuzzle.magnitude, hittableLayers, k_trigger_interaction))
                 {
-                    if (IsHitValid(hit))
-                    {
-                        OnHit(hit.point, hit.normal, hit.collider);
-                    }
+                    if (IsHitValid(hit)) OnHit(hit.point, hit.normal, hit.collider);
                 }
             }
+            else if (enemyController && enemyController.knownDetectedTarget)
+            {
+                // 敌人的弹道修正
+                m_HasTrajectoryOverride = true;
+
+                // 获取玩家的目标点
+                var targetPos = enemyController.knownDetectedTarget.transform.position;
+
+                print("获取玩家瞄准点坐标：" + targetPos);
+
+                // 计算从枪管到目标点的实际向量
+                var muzzleToTarget = targetPos - m_ProjectileBase.initialPosition;
+
+                // 将该向量投影到垂直于枪管朝向的平面上
+                m_TrajectoryCorrectionVector = Vector3.ProjectOnPlane(muzzleToTarget, transform.forward);
+
+                //修正距离应为邻边
+                var distanceToTarget = (muzzleToTarget - m_TrajectoryCorrectionVector).magnitude;
+
+                // 防止敌人贴脸开枪时修正距离过短导致报错
+                var enemyCorrectionDistance = Mathf.Max(distanceToTarget, 0.1f);
+
+                trajectoryCorrectionDistance = enemyCorrectionDistance;
+            }
+
             m_LastRootPosition = root.position;
         }
 
@@ -188,7 +207,7 @@ namespace FPS.GamePlay
 
             if (gravityDownAcceleration > 0)
             {
-                m_Velocity += Vector3.down * gravityDownAcceleration * Time.deltaTime;
+                m_Velocity += Vector3.down * (gravityDownAcceleration * Time.deltaTime);
             }
 
             //碰撞检测
@@ -224,17 +243,17 @@ namespace FPS.GamePlay
             };
             var foundHit = false;
 
-            var hits = Physics.SphereCastAll(startPoint, radius,
-                displacement.normalized, displacement.magnitude, hittableLayers,
-                k_trigger_interaction);
+            var size = Physics.SphereCastNonAlloc(startPoint, radius, displacement.normalized, m_Hits, displacement.magnitude, hittableLayers, k_trigger_interaction);
 
-            foreach (var hit in hits)
+            for (var index = 0; index < size; index++)
             {
-                if (IsHitValid(hit) && hit.distance < closestHit.distance)
+                var hit = m_Hits[index];
+                if (!IsHitValid(hit) || !(hit.distance < closestHit.distance))
                 {
-                    foundHit = true;
-                    closestHit = hit;
+                    continue;
                 }
+                foundHit = true;
+                closestHit = hit;
             }
 
             if (foundHit)

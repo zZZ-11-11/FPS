@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace FPS.Game.Shared
 {
@@ -16,7 +15,6 @@ namespace FPS.Game.Shared
 
         void Awake()
         {
-            // find the health component either at the same level, or higher in the hierarchy
             health = GetComponent<Health>();
             if (!health)
             {

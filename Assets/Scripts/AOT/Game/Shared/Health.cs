@@ -3,7 +3,7 @@ using UnityEngine.Events;
 
 namespace FPS.Game.Shared
 {
-    public class Health : MonoBehaviour
+    public sealed class Health : MonoBehaviour
     {
         public float maxHealth = 100f;
 
@@ -15,7 +15,7 @@ namespace FPS.Game.Shared
 
         public float currentHealth { get; set; }
         public bool invincible { get; set; }
-        public bool CanbeHealed() => currentHealth < maxHealth;
+        public bool CanBeHealed() => currentHealth < maxHealth;
 
         public float GetRatio() => currentHealth / maxHealth;
         public bool IsCritical() => GetRatio() <= criticalHealthRatio;
@@ -43,7 +43,9 @@ namespace FPS.Game.Shared
         public void TakeDamage(float damage, GameObject damageSource)
         {
             if (invincible)
+            {
                 return;
+            }
 
             var healthBefore = currentHealth;
             currentHealth -= damage;
@@ -70,13 +72,16 @@ namespace FPS.Game.Shared
         void HandleDeath()
         {
             if (m_IsDead)
-                return;
-
-            if (currentHealth <= 0f)
             {
-                m_IsDead = true;
-                onDie?.Invoke();
+                return;
             }
+
+            if (currentHealth > 0f)
+            {
+                return;
+            }
+            m_IsDead = true;
+            onDie?.Invoke();
         }
     }
 }

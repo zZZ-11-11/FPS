@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
+using FPS.Game;
 using FPS.Game.Shared;
 using UnityEngine;
 
 namespace FPS.AI
 {
     [RequireComponent(typeof(EnemyController), typeof(Health))]
-    public sealed class EnemyVisualsController : MonoBehaviour
+    public sealed class EnemyFXController : MonoBehaviour
     {
         [System.Serializable]
         public struct RendererIndexData
@@ -42,6 +43,9 @@ namespace FPS.AI
         public GameObject deathVfx;
 
         public Transform deathVfxSpawnPoint;
+
+        [Header("SFX")]
+        public AudioClip damageTick;
 
         private EnemyController m_Enemy;
         private Health m_Health;
@@ -101,6 +105,8 @@ namespace FPS.AI
             {
                 data.renderer.SetPropertyBlock(m_BodyFlashMaterialPropertyBlock, data.materialIndex);
             }
+            m_EyeColorMaterialPropertyBlock.SetColor("_EmissionColor", currentColor);
+            m_EyeRendererData.renderer.SetPropertyBlock(m_EyeColorMaterialPropertyBlock, m_EyeRendererData.materialIndex);
         }
 
         void OnDamaged(float damage, GameObject source) => m_LastTimeDamaged = Time.time;
@@ -129,6 +135,14 @@ namespace FPS.AI
             {
                 m_EyeColorMaterialPropertyBlock.SetColor("_EmissionColor", attackEyeColor);
                 m_EyeRendererData.renderer.SetPropertyBlock(m_EyeColorMaterialPropertyBlock, m_EyeRendererData.materialIndex);
+            }
+        }
+
+        public void PlayDamageTick()
+        {
+            if (damageTick != null)
+            {
+                AudioUtility.CreateSfx(damageTick, transform.position, AudioUtility.AudioGroups.DamageTick, 0f);
             }
         }
     }

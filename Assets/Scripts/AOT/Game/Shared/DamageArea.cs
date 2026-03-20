@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace FPS.Game.Shared
 {
-    public class DamageArea : MonoBehaviour
+    public sealed class DamageArea : MonoBehaviour
     {
         [Tooltip("伤害半径")]
         public float areaOfEffectDistance = 5f;
@@ -20,9 +19,9 @@ namespace FPS.Game.Shared
             QueryTriggerInteraction interaction, GameObject owner)
         {
             //记录被伤害的物体，避免重复
-            Dictionary<Health, Damageable> uniqueDamagedHealths = new Dictionary<Health, Damageable>();
+            var uniqueDamagedHealths = new Dictionary<Health, Damageable>();
 
-            Collider[] affectedColliders = Physics.OverlapSphere(center, areaOfEffectDistance, layers, interaction);
+            var affectedColliders = Physics.OverlapSphere(center, areaOfEffectDistance, layers, interaction);
             foreach (var coll in affectedColliders)
             {
                 var damageable = coll.GetComponent<Damageable>();

@@ -24,14 +24,14 @@ namespace FPS.AI
         public float orientationSpeed = 10f;
 
         [Tooltip("死亡延迟销毁时间")]
-        public float deathDuration = 0f;
+        public float deathDuration;
 
         [Header("Weapons Parameters")]
         [Tooltip("攻击后是否自动换武器")]
-        public bool swapToNextWeapon = false;
+        public bool swapToNextWeapon;
 
         [Tooltip("切换武器后射击延迟")]
-        public float delayAfterWeaponSwap = 0f;
+        public float delayAfterWeaponSwap;
 
         [Header("Loot")]
         [Tooltip("掉落物")]
@@ -40,10 +40,6 @@ namespace FPS.AI
         [Range(0, 1)]
         [Tooltip("掉落物掉落概率")]
         public float dropRate = 1f;
-
-        [Header("Sounds")]
-        [Tooltip("受击音效")]
-        public AudioClip damageTick;
 
         private IEnemyState m_CurrentState;
 
@@ -73,6 +69,7 @@ namespace FPS.AI
         EnemyManager m_EnemyManager;
         ActorsManager m_ActorsManager;
         GameFlowManager m_GameFlowManager;
+        EnemyFXController m_EnemyFXController;
 
         WeaponCore[] m_Weapons;
         WeaponCore m_CurrentWeapon;
@@ -101,7 +98,7 @@ namespace FPS.AI
             navMeshAgent = GetComponent<NavMeshAgent>();
             m_SelfColliders = GetComponentsInChildren<Collider>();
             detectionModule = GetComponentInChildren<DetectionModule>();
-
+            m_EnemyFXController = GetComponentInChildren<EnemyFXController>();
             m_Health.onDie += OnDie;
             m_Health.onDamaged += HandleDamage;
 
@@ -115,12 +112,14 @@ namespace FPS.AI
 
         void Update()
         {
+            //检测死亡高度
             if (transform.position.y < selfDestructYHeight)
             {
                 Destroy(gameObject);
                 return;
             }
 
+            //索敌检测
             detectionModule.HandleTargetDetection(m_Actor, m_SelfColliders);
 
             // 执行当前状态
@@ -155,7 +154,7 @@ namespace FPS.AI
             }
         }
 
-        //获取路径目标
+        //获取路径目标（世界坐标）
         public Vector3 GetDestinationOnPath() => patrolPath != null ? patrolPath.GetPositionOfPathNode(m_PathDestinationNodeIndex) : transform.position;
 
         //到达后自动换下一个节点
@@ -177,7 +176,10 @@ namespace FPS.AI
 
             OrientTowards(enemyPosition);
 
-            if (Time.time < m_LastTimeWeaponSwapped + delayAfterWeaponSwap) return false;
+            if (Time.time < m_LastTimeWeaponSwapped + delayAfterWeaponSwap)
+            {
+                return false;
+            }
 
             var didFire = GetCurrentWeapon().HandleShootInputs(false, true, false);
             if (didFire)
@@ -193,24 +195,14 @@ namespace FPS.AI
 
         private void OrientTowards(Vector3 lookPosition)
         {
-            // 身体朝向
             var lookDirection = Vector3.ProjectOnPlane(lookPosition - transform.position, Vector3.up).normalized;
             if (lookDirection.sqrMagnitude != 0f)
             {
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(lookDirection), Time.deltaTime * orientationSpeed);
             }
-
-            // 武器朝向
-            foreach (var weapon in m_Weapons)
-            {
-                if (weapon != null && weapon.weaponRoot != null)
-                {
-                    weapon.transform.forward = (lookPosition - weapon.weaponRoot.transform.position).normalized;
-                }
-            }
         }
 
-        //如果伤害源非同类，检测模块强制发现敌人，如果当前状态非死亡，进入追逐状态，如果有音效则播放，标记此帧为已受伤
+        //如果伤害源非同类，检测模块强制发现敌人，如果当前状态非死亡，进入追逐状态，如果有音效则播放，标记此帧为已受伤,一帧只会播放一次音效
         void HandleDamage(float damage, GameObject damageSource)
         {
             if (damageSource && !damageSource.GetComponent<EnemyController>())
@@ -222,9 +214,9 @@ namespace FPS.AI
                     ChangeState(chaseState);
                 }
 
-                if (damageTick && !m_WasDamagedThisFrame)
+                if (!m_WasDamagedThisFrame)
                 {
-                    AudioUtility.CreateSfx(damageTick, transform.position, AudioUtility.AudioGroups.DamageTick, 0f);
+                    m_EnemyFXController.PlayDamageTick();
                 }
 
                 m_WasDamagedThisFrame = true;
@@ -251,7 +243,7 @@ namespace FPS.AI
                 // 查找所有的 WeaponCore
                 m_Weapons = GetComponentsInChildren<WeaponCore>();
 
-                for (int i = 0; i < m_Weapons.Length; i++)
+                for (var i = 0; i < m_Weapons.Length; i++)
                 {
                     // 使用新的 SetOwner 方法
                     m_Weapons[i].SetOwner(gameObject);
@@ -271,7 +263,10 @@ namespace FPS.AI
 
         void SetCurrentWeapon(int index)
         {
-            if (m_Weapons.Length == 0) return;
+            if (m_Weapons.Length == 0)
+            {
+                return;
+            }
 
             m_CurrentWeaponIndex = index;
             m_CurrentWeapon = m_Weapons[m_CurrentWeaponIndex];

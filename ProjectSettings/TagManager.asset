@@ -15,8 +15,8 @@ TagManager:
   - FirstPersonWeapon
   - Environment
   - Floor
-  - 
-  - 
+  - Hitbox
+  - Weapon
   - 
   - 
   - 

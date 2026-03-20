@@ -9,12 +9,16 @@ namespace FPS.AI
         private Animator m_Animator;
         private EnemyController m_EnemyController;
         private Health m_Health;
+        private int m_shootLayerIndex;
 
         private const string k_anim_attack_parameter = "Attack";
         private const string k_anim_damaged_parameter = "Damaged";
+        private const string k_anim_death_parameter = "Dead";
+        private const string fire_animation_state = "Fire";
 
         private static readonly int s_Attack = Animator.StringToHash(k_anim_attack_parameter);
         private static readonly int s_Damaged = Animator.StringToHash(k_anim_damaged_parameter);
+        private static readonly int s_Dead = Animator.StringToHash(k_anim_death_parameter);
 
         void Awake()
         {
@@ -25,7 +29,7 @@ namespace FPS.AI
 
         void Start()
         {
-            // 订阅开火和受击事件
+            m_shootLayerIndex = m_Animator.GetLayerIndex("Fire Layer");
             if (m_EnemyController != null)
             {
                 m_EnemyController.onAttack += PlayAttackAnimation;
@@ -34,6 +38,7 @@ namespace FPS.AI
             if (m_Health != null)
             {
                 m_Health.onDamaged += PlayDamagedAnimation;
+                m_Health.onDie += PlayDeadAnimation;
             }
         }
 
@@ -41,7 +46,8 @@ namespace FPS.AI
         {
             if (m_Animator)
             {
-                m_Animator.SetTrigger(s_Attack);
+                // m_Animator.SetTrigger(s_Attack);
+                m_Animator.Play(fire_animation_state, m_shootLayerIndex, 0f);
             }
         }
 
@@ -50,6 +56,14 @@ namespace FPS.AI
             if (m_Animator)
             {
                 m_Animator.SetTrigger(s_Damaged);
+            }
+        }
+
+        private void PlayDeadAnimation()
+        {
+            if (m_Animator)
+            {
+                m_Animator.SetBool(s_Dead, true);
             }
         }
     }
