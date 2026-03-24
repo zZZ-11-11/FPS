@@ -5,15 +5,15 @@ using UnityEngine;
 
 namespace FPS.AI
 {
-    public class EnemyManager : MonoBehaviour
+    public sealed class EnemyManager : MonoBehaviour
     {
-        public List<EnemyController> enemies { get; private set; }
+        public List<EnemyController> enemies { get; private set; } = new List<EnemyController>();
         public int numberOfEnemiesTotal { get; private set; }
         public int numberOfEnemiesRemaining => enemies.Count;
+        private const float initial_spawn_window = 0.2f;
 
         void Awake()
         {
-            enemies = new List<EnemyController>();
         }
 
         public void RegisterEnemy(EnemyController enemy)
@@ -21,6 +21,18 @@ namespace FPS.AI
             enemies.Add(enemy);
 
             numberOfEnemiesTotal++;
+
+            var isInitial = Time.timeSinceLevelLoad < initial_spawn_window;
+
+            if (isInitial)
+            {
+                return;
+            }
+
+            var evt = Events.enemySpawnEvent;
+            evt.enemy = enemy.gameObject;
+            evt.remainingEnemyCount = numberOfEnemiesRemaining;
+            EventManager.Broadcast(evt);
         }
 
         public void UnregisterEnemy(EnemyController enemyKilled)
@@ -30,11 +42,10 @@ namespace FPS.AI
                 Debug.LogError("EnemyManager: UnregisterEnemy failed");
                 return;
             }
-            var remainingCount = enemies.Count;
 
             var evt = Events.enemyKillEvent;
             evt.enemy = enemyKilled.gameObject;
-            evt.remainingEnemyCount = remainingCount;
+            evt.remainingEnemyCount = numberOfEnemiesRemaining;
 
             EventManager.Broadcast(evt);
         }

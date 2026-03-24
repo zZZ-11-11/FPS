@@ -15,11 +15,12 @@ namespace FPS.Game
         public static AmmoPickupEvent ammoPickupEvent = new AmmoPickupEvent();
         public static DamageEvent damageEvent = new DamageEvent();
         public static readonly DisplayMessageEvent displayMessageEvent = new DisplayMessageEvent();
+        public static readonly EnemySpawnEvent enemySpawnEvent = new EnemySpawnEvent();
     }
 
     public sealed class ObjectiveUpdateEvent : GameEvent
     {
-        public Objective objective;
+        public Shared.Objective objective;
         public string descriptionText;
         public string counterText;
         public bool isComplete;
@@ -65,5 +66,12 @@ namespace FPS.Game
     {
         public string message;
         public float delayBeforeDisplay;
+    }
+
+    public sealed class EnemySpawnEvent : GameEvent
+    {
+        public GameObject enemy;
+        public int remainingEnemyCount;
+        public bool isInitialSpawn;
     }
 }

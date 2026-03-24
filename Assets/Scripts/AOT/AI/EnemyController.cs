@@ -83,25 +83,20 @@ namespace FPS.AI
             patrolState = new EnemyPatrolState();
             attackState = new EnemyAttackState();
             chaseState = new EnemyChaseState();
-        }
-
-        void Start()
-        {
-            m_EnemyManager = FindAnyObjectByType<EnemyManager>();
-            m_ActorsManager = FindAnyObjectByType<ActorsManager>();
-            m_GameFlowManager = FindAnyObjectByType<GameFlowManager>();
-            m_EnemyManager.RegisterEnemy(this);
-
-            // 本地组件初始化
             m_Health = GetComponent<Health>();
             m_Actor = GetComponent<Actor>();
             navMeshAgent = GetComponent<NavMeshAgent>();
             m_SelfColliders = GetComponentsInChildren<Collider>();
             detectionModule = GetComponentInChildren<DetectionModule>();
             m_EnemyFXController = GetComponentInChildren<EnemyFXController>();
-            m_Health.onDie += OnDie;
-            m_Health.onDamaged += HandleDamage;
 
+            m_EnemyManager = FindAnyObjectByType<EnemyManager>();
+            m_ActorsManager = FindAnyObjectByType<ActorsManager>();
+            m_GameFlowManager = FindAnyObjectByType<GameFlowManager>();
+        }
+
+        void Start()
+        {
             // 初始化武器
             FindAndInitializeAllWeapons();
             GetCurrentWeapon().ShowWeapon(true);
@@ -226,7 +221,6 @@ namespace FPS.AI
         void OnDie()
         {
             ChangeState(deadState);
-            m_EnemyManager.UnregisterEnemy(this);
 
             if (dropRate > 0 && lootPrefab != null && (Mathf.Approximately(dropRate, 1) || Random.value <= dropRate))
             {
@@ -272,6 +266,33 @@ namespace FPS.AI
             m_CurrentWeapon = m_Weapons[m_CurrentWeaponIndex];
 
             m_LastTimeWeaponSwapped = swapToNextWeapon ? Time.time : Mathf.NegativeInfinity;
+        }
+
+        private void OnEnable()
+        {
+            if (m_Health != null)
+            {
+                m_Health.onDie += OnDie;
+                m_Health.onDamaged += HandleDamage;
+            }
+            if (m_EnemyManager != null)
+            {
+                m_EnemyManager.RegisterEnemy(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (m_Health != null)
+            {
+                m_Health.onDie -= OnDie;
+                m_Health.onDamaged -= HandleDamage;
+            }
+
+            if (m_EnemyManager != null)
+            {
+                m_EnemyManager.UnregisterEnemy(this);
+            }
         }
     }
 }

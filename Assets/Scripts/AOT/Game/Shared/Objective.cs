@@ -6,58 +6,64 @@ namespace FPS.Game.Shared
 {
     public abstract class Objective : MonoBehaviour
     {
-        [Tooltip("Name of the objective that will be shown on screen")]
-        public string Title;
+        [Tooltip("标题")]
+        public string title;
 
-        [Tooltip("Short text explaining the objective that will be shown on screen")]
-        public string Description;
+        [Tooltip("描述")]
+        public string description;
 
-        [Tooltip("Whether the objective is required to win or not")]
-        public bool IsOptional;
+        [Tooltip("是否支线")]
+        public bool isOptional;
 
-        [Tooltip("Delay before the objective becomes visible")]
-        public float DelayVisible;
+        [Tooltip("延迟显示时间")]
+        public float delayVisible;
 
-        public bool IsCompleted { get; private set; }
-        public bool IsBlocking() => !(IsOptional || IsCompleted);
+        //是否完成
+        public bool isCompleted { get; private set; }
 
-        public static event Action<Objective> OnObjectiveCreated;
-        public static event Action<Objective> OnObjectiveCompleted;
+        //是否阻塞（非支线且未完成），用于游戏管理器判断玩家是否可以进入下一关
+        public bool IsBlocking() => !(isOptional || isCompleted);
 
+        public static event Action<Objective> onObjectiveCreated;
+        public static event Action<Objective> onObjectiveCompleted;
+
+        //调用委托，广播事件
         protected virtual void Start()
         {
-            OnObjectiveCreated?.Invoke(this);
+            onObjectiveCreated?.Invoke(this);
 
-            DisplayMessageEvent displayMessage = Events.displayMessageEvent;
-            displayMessage.message = Title;
-            displayMessage.delayBeforeDisplay = 0.0f;
+            var displayMessage = Events.displayMessageEvent;
+            displayMessage.message = title;
+            displayMessage.delayBeforeDisplay = delayVisible;
             EventManager.Broadcast(displayMessage);
         }
 
+        //由子类在任务进度更新时调用（比如“收集苹果 1/5”变成了“收集苹果 2/5”），广播，更新UI
         public void UpdateObjective(string descriptionText, string counterText, string notificationText)
         {
-            ObjectiveUpdateEvent evt = Events.objectiveUpdateEvent;
+            var evt = Events.objectiveUpdateEvent;
             evt.objective = this;
             evt.descriptionText = descriptionText;
             evt.counterText = counterText;
             evt.notificationText = notificationText;
-            evt.isComplete = IsCompleted;
+            evt.isComplete = isCompleted;
             EventManager.Broadcast(evt);
         }
 
+        //完成任务，广播，更新UI，调用委托，检查游戏是否结束
         public void CompleteObjective(string descriptionText, string counterText, string notificationText)
         {
-            IsCompleted = true;
+            isCompleted = true;
 
-            ObjectiveUpdateEvent evt = Events.objectiveUpdateEvent;
+            var evt = Events.objectiveUpdateEvent;
             evt.objective = this;
             evt.descriptionText = descriptionText;
             evt.counterText = counterText;
             evt.notificationText = notificationText;
-            evt.isComplete = IsCompleted;
+            evt.isComplete = isCompleted;
             EventManager.Broadcast(evt);
 
-            OnObjectiveCompleted?.Invoke(this);
+            onObjectiveCompleted?.Invoke(this);
         }
     }
 }
