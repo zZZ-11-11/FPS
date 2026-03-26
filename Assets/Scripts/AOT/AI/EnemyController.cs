@@ -89,7 +89,6 @@ namespace FPS.AI
             m_SelfColliders = GetComponentsInChildren<Collider>();
             detectionModule = GetComponentInChildren<DetectionModule>();
             m_EnemyFXController = GetComponentInChildren<EnemyFXController>();
-
             m_EnemyManager = FindAnyObjectByType<EnemyManager>();
             m_ActorsManager = FindAnyObjectByType<ActorsManager>();
             m_GameFlowManager = FindAnyObjectByType<GameFlowManager>();
@@ -97,6 +96,10 @@ namespace FPS.AI
 
         void Start()
         {
+            if (m_EnemyManager != null)
+            {
+                m_EnemyManager.RegisterEnemy(this);
+            }
             // 初始化武器
             FindAndInitializeAllWeapons();
             GetCurrentWeapon().ShowWeapon(true);
@@ -226,7 +229,10 @@ namespace FPS.AI
             {
                 Instantiate(lootPrefab, transform.position, Quaternion.identity);
             }
-
+            if (m_EnemyManager != null)
+            {
+                m_EnemyManager.UnregisterEnemy(this);
+            }
             Destroy(gameObject, deathDuration);
         }
 
@@ -275,10 +281,6 @@ namespace FPS.AI
                 m_Health.onDie += OnDie;
                 m_Health.onDamaged += HandleDamage;
             }
-            if (m_EnemyManager != null)
-            {
-                m_EnemyManager.RegisterEnemy(this);
-            }
         }
 
         private void OnDisable()
@@ -287,11 +289,6 @@ namespace FPS.AI
             {
                 m_Health.onDie -= OnDie;
                 m_Health.onDamaged -= HandleDamage;
-            }
-
-            if (m_EnemyManager != null)
-            {
-                m_EnemyManager.UnregisterEnemy(this);
             }
         }
     }
