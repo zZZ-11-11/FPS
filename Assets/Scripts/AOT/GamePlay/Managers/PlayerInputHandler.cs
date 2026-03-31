@@ -75,7 +75,7 @@ namespace FPS.GamePlay.Managers
 
         public bool CanProcessInput()
         {
-            return Cursor.lockState == CursorLockMode.Locked && !m_GameFlowManager.GameIsEnding;
+            return Cursor.lockState == CursorLockMode.Locked && !m_GameFlowManager.gameIsEnding;
         }
 
         public Vector3 GetMoveInput()

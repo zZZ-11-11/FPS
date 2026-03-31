@@ -26,6 +26,7 @@ namespace FPS.Game.Shared
 
         public static event Action<Objective> onObjectiveCreated;
         public static event Action<Objective> onObjectiveCompleted;
+        public static event Action<Objective> onObjectiveDestroyed;
 
         //调用委托，广播事件
         protected virtual void Start()
@@ -64,6 +65,11 @@ namespace FPS.Game.Shared
             EventManager.Broadcast(evt);
 
             onObjectiveCompleted?.Invoke(this);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            onObjectiveDestroyed?.Invoke(this);
         }
     }
 }

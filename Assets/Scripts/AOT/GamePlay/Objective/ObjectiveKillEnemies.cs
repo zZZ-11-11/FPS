@@ -1,11 +1,13 @@
+using System.Collections;
 using FPS.AI;
+using FPS.Game;
 using FPS.Game.Managers;
 using UnityEngine;
 
-namespace FPS.Game.Objective
+namespace FPS.GamePlay.Objective
 
 {
-    public sealed class ObjectiveKillEnemies : Shared.Objective
+    public sealed class ObjectiveKillEnemies : Game.Shared.Objective
     {
         [Tooltip("是否需要全部击杀")]
         public bool mustKillAllEnemies = true;
@@ -13,7 +15,7 @@ namespace FPS.Game.Objective
         [Tooltip("杀敌目标数")]
         public int killsToCompleteObjective = 5;
 
-        [Tooltip("倒计时通知阈值")]
+        [Tooltip("剩余敌人通知阈值")]
         public int notificationEnemiesRemainingThreshold = 3;
 
         //已击杀数量
@@ -22,6 +24,12 @@ namespace FPS.Game.Objective
         //订阅敌人死亡事件
         protected override void Start()
         {
+            StartCoroutine(DelayedInitRoutine());
+        }
+
+        private IEnumerator DelayedInitRoutine()
+        {
+            yield return null;
             //计算所需杀敌数
             if (mustKillAllEnemies)
             {
@@ -105,9 +113,9 @@ namespace FPS.Game.Objective
 
         private string GetUpdatedCounterAmount() => m_KillTotal + " / " + killsToCompleteObjective;
 
-        //防止内存泄漏
-        void OnDestroy()
+        protected override void OnDestroy()
         {
+            base.OnDestroy();
             EventManager.RemoveListener<EnemyKillEvent>(OnEnemyKilled);
             EventManager.RemoveListener<EnemySpawnEvent>(OnEnemySpawned);
         }

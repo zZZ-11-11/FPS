@@ -167,7 +167,7 @@ namespace FPS.AI
         //转向并开火
         public bool TryAttack(Vector3 enemyPosition)
         {
-            if (m_GameFlowManager != null && m_GameFlowManager.GameIsEnding)
+            if (m_GameFlowManager != null && m_GameFlowManager.gameIsEnding)
             {
                 return false;
             }
