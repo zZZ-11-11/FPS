@@ -179,10 +179,11 @@ namespace FPS.AI
                 return false;
             }
 
+            onAttack?.Invoke();
+
             var didFire = GetCurrentWeapon().HandleShootInputs(false, true, false);
             if (didFire)
             {
-                onAttack?.Invoke();
                 if (swapToNextWeapon && m_Weapons.Length > 1)
                 {
                     SetCurrentWeapon((m_CurrentWeaponIndex + 1) % m_Weapons.Length);

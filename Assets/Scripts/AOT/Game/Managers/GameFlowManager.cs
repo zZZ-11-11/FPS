@@ -14,22 +14,23 @@ namespace FPS.Game.Managers
         public CanvasGroup endGameFadeCanvasGroup;
 
         [Header("Win")]
-        [Tooltip("This string has to be the name of the scene you want to load when winning")]
+        [Tooltip("胜利场景")]
         public string winSceneName = "WinScene";
 
-        [Tooltip("Duration of delay before the fade-to-black, if winning")]
+        [Tooltip("渐变前的等待时间")]
         public float delayBeforeFadeToBlack = 4f;
 
-        [Tooltip("Win game message")]
+        [Tooltip("胜利文本")]
         public string winGameMessage;
 
-        [Tooltip("Duration of delay before the win message")]
+        [Tooltip("文本弹出的延迟")]
         public float delayBeforeWinMessage = 2f;
 
-        [Tooltip("Sound played on win")]
+        [Tooltip("胜利音效")]
         public AudioClip victorySound;
 
         [Header("Lose")]
+        [Tooltip("失败场景")]
         public string loseSceneName = "LoseScene";
 
         public bool gameIsEnding { get; private set; }
@@ -45,58 +46,58 @@ namespace FPS.Game.Managers
 
         void Start()
         {
+            //TODO 配置持久化
             AudioUtility.SetMasterVolume(1);
         }
 
+        /// <summary>
+        /// 根据进度淡入结束界面，淡出音量,时间到后加载新场景
+        /// </summary>
         void Update()
         {
-            if (gameIsEnding)
+            if (!gameIsEnding)
             {
-                var timeRatio = 1 - (m_TimeLoadEndGameScene - Time.time) / endSceneLoadDelay;
-                endGameFadeCanvasGroup.alpha = timeRatio;
-
-                AudioUtility.SetMasterVolume(1 - timeRatio);
-
-                // See if it's time to load the end scene (after the delay)
-                if (Time.time >= m_TimeLoadEndGameScene)
-                {
-                    SceneManager.LoadScene(m_SceneToLoad);
-                    gameIsEnding = false;
-                }
+                return;
             }
+            var timeRatio = 1 - (m_TimeLoadEndGameScene - Time.time) / endSceneLoadDelay;
+            endGameFadeCanvasGroup.alpha = timeRatio;
+
+            AudioUtility.SetMasterVolume(1 - timeRatio);
+
+            if (Time.time < m_TimeLoadEndGameScene)
+            {
+                return;
+            }
+            SceneManager.LoadScene(m_SceneToLoad);
+            gameIsEnding = false;
         }
 
         void OnAllObjectivesCompleted(AllObjectivesCompletedEvent evt) => EndGame(true);
         void OnPlayerDeath(PlayerDeathEvent evt) => EndGame(false);
 
+        /// <summary>
+        /// 解锁鼠标，标记游戏结束，黑屏后加载游戏结束场景
+        /// </summary>
+        /// <param name="win"></param>
         void EndGame(bool win)
         {
-            // unlocks the cursor before leaving the scene, to be able to click buttons
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            // Remember that we need to load the appropriate end scene after a delay
             gameIsEnding = true;
             endGameFadeCanvasGroup.gameObject.SetActive(true);
             if (win)
             {
                 m_SceneToLoad = winSceneName;
+                // 加载场景的时间点：当前时间 + 基础延迟 + 胜利额外等待时间
                 m_TimeLoadEndGameScene = Time.time + endSceneLoadDelay + delayBeforeFadeToBlack;
 
-                // play a sound on win
+                // 播放音效
                 var audioSource = gameObject.AddComponent<AudioSource>();
                 audioSource.clip = victorySound;
                 audioSource.playOnAwake = false;
                 audioSource.outputAudioMixerGroup = AudioUtility.GetAudioGroup(AudioUtility.AudioGroups.HUDVictory);
                 audioSource.PlayScheduled(AudioSettings.dspTime + delayBeforeWinMessage);
-
-                // create a game message
-                //var message = Instantiate(WinGameMessagePrefab).GetComponent<DisplayMessage>();
-                //if (message)
-                //{
-                //    message.delayBeforeShowing = delayBeforeWinMessage;
-                //    message.GetComponent<Transform>().SetAsLastSibling();
-                //}
 
                 var displayMessage = Events.displayMessageEvent;
                 displayMessage.message = winGameMessage;

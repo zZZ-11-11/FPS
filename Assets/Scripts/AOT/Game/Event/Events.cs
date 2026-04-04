@@ -7,7 +7,7 @@ namespace FPS.Game
     public static class Events
     {
         public static readonly ObjectiveUpdateEvent objectiveUpdateEvent = new ObjectiveUpdateEvent();
-        public static AllObjectivesCompletedEvent allObjectivesCompletedEvent = new AllObjectivesCompletedEvent();
+        public static readonly AllObjectivesCompletedEvent allObjectivesCompletedEvent = new AllObjectivesCompletedEvent();
         public static GameOverEvent gameOverEvent = new GameOverEvent();
         public static readonly PlayerDeathEvent playerDeathEvent = new PlayerDeathEvent();
         public static readonly EnemyKillEvent enemyKillEvent = new EnemyKillEvent();

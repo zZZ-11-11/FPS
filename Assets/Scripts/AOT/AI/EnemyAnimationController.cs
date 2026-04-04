@@ -35,11 +35,12 @@ namespace FPS.AI
                 m_EnemyController.onAttack += PlayAttackAnimation;
             }
 
-            if (m_Health != null)
+            if (m_Health == null)
             {
-                m_Health.onDamaged += PlayDamagedAnimation;
-                m_Health.onDie += PlayDeadAnimation;
+                return;
             }
+            m_Health.onDamaged += PlayDamagedAnimation;
+            m_Health.onDie += PlayDeadAnimation;
         }
 
         private void PlayAttackAnimation()
