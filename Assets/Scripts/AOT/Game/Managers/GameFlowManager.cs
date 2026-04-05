@@ -51,7 +51,7 @@ namespace FPS.Game.Managers
         }
 
         /// <summary>
-        /// 根据进度淡入结束界面，淡出音量,时间到后加载新场景
+        /// 根据进度淡入黑屏，淡出音量,时间到后加载新场景
         /// </summary>
         void Update()
         {
@@ -59,7 +59,7 @@ namespace FPS.Game.Managers
             {
                 return;
             }
-            var timeRatio = 1 - (m_TimeLoadEndGameScene - Time.time) / endSceneLoadDelay;
+            var timeRatio = 1 - Mathf.Clamp01((m_TimeLoadEndGameScene - Time.time) / endSceneLoadDelay);
             endGameFadeCanvasGroup.alpha = timeRatio;
 
             AudioUtility.SetMasterVolume(1 - timeRatio);
@@ -89,7 +89,7 @@ namespace FPS.Game.Managers
             if (win)
             {
                 m_SceneToLoad = winSceneName;
-                // 加载场景的时间点：当前时间 + 基础延迟 + 胜利额外等待时间
+                // 加载场景的时间点：胜利结算时间+渐变时间
                 m_TimeLoadEndGameScene = Time.time + endSceneLoadDelay + delayBeforeFadeToBlack;
 
                 // 播放音效

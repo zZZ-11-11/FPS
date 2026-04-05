@@ -5,22 +5,22 @@ using UnityEngine.InputSystem;
 
 namespace FPS.GamePlay.Managers
 {
-    public class PlayerInputHandler : MonoBehaviour
+    public sealed class PlayerInputHandler : MonoBehaviour
     {
-        [Tooltip("Sensitivity multiplier for moving the camera around")]
-        public float LookSensitivity = 1f;
+        [Tooltip("相机移动灵敏度")]
+        public float lookSensitivity = 1f;
 
-        [Tooltip("Additional sensitivity multiplier for WebGL")]
-        public float WebglLookSensitivityMultiplier = 0.25f;
+        [Tooltip("WebGL附加灵敏度系数")]
+        public float webglLookSensitivityMultiplier = 0.25f;
 
-        [Tooltip("Limit to consider an input when using a trigger on a controller")]
-        public float TriggerAxisThreshold = 0.4f;
+        [Tooltip("摇杆死区")]
+        public float triggerAxisThreshold = 0.4f;
 
-        [Tooltip("Used to flip the vertical input axis")]
-        public bool InvertYAxis = false;
+        [Tooltip("翻转y轴")]
+        public bool invertYAxis;
 
-        [Tooltip("Used to flip the horizontal input axis")]
-        public bool InvertXAxis = false;
+        [Tooltip("翻转x轴")]
+        public bool invertXAxis;
 
         GameFlowManager m_GameFlowManager;
         PlayerCharacterController m_PlayerCharacterController;
@@ -73,17 +73,14 @@ namespace FPS.GamePlay.Managers
             m_FireInputWasHeld = GetFireInputHeld();
         }
 
-        public bool CanProcessInput()
-        {
-            return Cursor.lockState == CursorLockMode.Locked && !m_GameFlowManager.gameIsEnding;
-        }
+        private bool CanProcessInput() => Cursor.lockState == CursorLockMode.Locked && !m_GameFlowManager.gameIsEnding;
 
         public Vector3 GetMoveInput()
         {
             if (CanProcessInput())
             {
                 var input = m_MoveAction.ReadValue<Vector2>();
-                Vector3 move = new Vector3(input.x, 0f, input.y);
+                var move = new Vector3(input.x, 0f, input.y);
 
                 // constrain move input to a maximum magnitude of 1, otherwise diagonal movement might exceed the max move speed defined
                 move = Vector3.ClampMagnitude(move, 1);
@@ -97,14 +94,18 @@ namespace FPS.GamePlay.Managers
         public float GetLookInputsHorizontal()
         {
             if (!CanProcessInput())
+            {
                 return 0.0f;
+            }
 
-            float input = m_LookAction.ReadValue<Vector2>().x;
+            var input = m_LookAction.ReadValue<Vector2>().x;
 
-            if (InvertXAxis)
+            if (invertXAxis)
+            {
                 input *= -1;
+            }
 
-            input *= LookSensitivity;
+            input *= lookSensitivity;
 
 #if UNITY_WEBGL
             // Mouse tends to be even more sensitive in WebGL due to mouse acceleration, so reduce it even more
@@ -117,14 +118,18 @@ namespace FPS.GamePlay.Managers
         public float GetLookInputsVertical()
         {
             if (!CanProcessInput())
+            {
                 return 0.0f;
+            }
 
-            float input = m_LookAction.ReadValue<Vector2>().y;
+            var input = m_LookAction.ReadValue<Vector2>().y;
 
-            if (InvertYAxis)
+            if (invertYAxis)
+            {
                 input *= -1;
+            }
 
-            input *= LookSensitivity;
+            input *= lookSensitivity;
 
 #if UNITY_WEBGL
             // Mouse tends to be even more sensitive in WebGL due to mouse acceleration, so reduce it even more
@@ -154,15 +159,9 @@ namespace FPS.GamePlay.Managers
             return false;
         }
 
-        public bool GetFireInputDown()
-        {
-            return GetFireInputHeld() && !m_FireInputWasHeld;
-        }
+        public bool GetFireInputDown() => GetFireInputHeld() && !m_FireInputWasHeld;
 
-        public bool GetFireInputReleased()
-        {
-            return !GetFireInputHeld() && m_FireInputWasHeld;
-        }
+        public bool GetFireInputReleased() => !GetFireInputHeld() && m_FireInputWasHeld;
 
         public bool GetFireInputHeld()
         {
@@ -265,6 +264,30 @@ namespace FPS.GamePlay.Managers
             }
 
             return 0;
+        }
+
+        /// <summary>
+        /// 切换到 UI 模式
+        /// </summary>
+        public void EnableUIMode()
+        {
+            InputSystem.actions.FindActionMap("Player").Disable();
+            InputSystem.actions.FindActionMap("UI").Enable();
+            // 如果需要显示鼠标
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+        }
+
+        /// <summary>
+        ///  恢复到玩家模式
+        /// </summary>
+        public void EnablePlayerMode()
+        {
+            InputSystem.actions.FindActionMap("UI").Disable();
+            InputSystem.actions.FindActionMap("Player").Enable();
+            // 隐藏并锁定鼠标（FPS游戏常用）
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
         }
     }
 }
