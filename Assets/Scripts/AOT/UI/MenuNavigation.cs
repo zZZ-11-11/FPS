@@ -18,6 +18,8 @@ public sealed class MenuNavigation : MonoBehaviour
 
         m_SubmitAction = InputSystem.actions.FindAction("UI/Submit");
         m_NavigateAction = InputSystem.actions.FindAction("UI/Navigate");
+        m_SubmitAction.Enable();
+        m_NavigateAction.Enable();
     }
 
     void LateUpdate()
