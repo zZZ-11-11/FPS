@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using FPS.GamePlay.Base;
 using UnityEngine;
@@ -80,5 +81,8 @@ namespace FPS.GamePlay.Weapon
         }
 
         public override float GetCurrentAmmoRatio() => (float) m_CurrentClipAmmo / clipSize;
+        public override float GetCurrentAmmo() => m_CurrentClipAmmo;
+
+        public override float GetBackUpAmmo() => m_CurrentBackupAmmo;
     }
 }

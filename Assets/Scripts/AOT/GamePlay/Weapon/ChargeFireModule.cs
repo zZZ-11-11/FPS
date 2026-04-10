@@ -1,5 +1,7 @@
-﻿using FPS.GamePlay.Base;
+﻿using System;
+using FPS.GamePlay.Base;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace FPS.GamePlay.Weapon
 {
@@ -136,5 +138,7 @@ namespace FPS.GamePlay.Weapon
             float spreadAngleRatio = bulletSpreadAngle / 180f;
             return Vector3.Slerp(shootTransform.forward, Random.insideUnitSphere, spreadAngleRatio);
         }
+
+        public override float GetAmmoPerShot() => -1;
     }
 }

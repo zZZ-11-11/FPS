@@ -16,5 +16,7 @@ namespace FPS.GamePlay.Base
 
         public virtual bool isCharging => false;
         public abstract bool ProcessInput(bool inputDown, bool inputHeld, bool inputUp, WeaponCore weaponCore);
+
+        public abstract float GetAmmoPerShot();
     }
 }

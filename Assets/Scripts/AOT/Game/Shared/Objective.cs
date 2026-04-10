@@ -19,7 +19,7 @@ namespace FPS.Game.Shared
         public float delayVisible;
 
         //是否完成
-        public bool isCompleted { get; private set; }
+        protected bool isCompleted { get; private set; }
 
         //是否阻塞（非支线且未完成），用于游戏管理器判断玩家是否可以进入下一关
         public bool IsBlocking() => !(isOptional || isCompleted);
@@ -40,7 +40,7 @@ namespace FPS.Game.Shared
         }
 
         //由子类在任务进度更新时调用（比如“收集苹果 1/5”变成了“收集苹果 2/5”），广播，更新UI
-        public void UpdateObjective(string descriptionText, string counterText, string notificationText)
+        protected void UpdateObjective(string descriptionText, string counterText, string notificationText)
         {
             var evt = Events.objectiveUpdateEvent;
             evt.objective = this;
@@ -52,7 +52,7 @@ namespace FPS.Game.Shared
         }
 
         //完成任务，广播，更新UI，调用委托，检查游戏是否结束
-        public void CompleteObjective(string descriptionText, string counterText, string notificationText)
+        protected void CompleteObjective(string descriptionText, string counterText, string notificationText)
         {
             isCompleted = true;
 

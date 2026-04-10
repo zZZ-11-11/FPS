@@ -93,5 +93,7 @@ namespace FPS.GamePlay.Weapon
             float spreadAngleRatio = bulletSpreadAngle / 180f;
             return Vector3.Slerp(shootTransform.forward, Random.insideUnitSphere, spreadAngleRatio);
         }
+
+        public override float GetAmmoPerShot() => ammoPerShot;
     }
 }

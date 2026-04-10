@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace FPS.GamePlay.Base
 {
@@ -10,7 +9,11 @@ namespace FPS.GamePlay.Base
         public abstract void ConsumeAmmo(float amount);
         public abstract float GetCurrentAmmoRatio();
 
-        public bool autoRegenerate = false;
+        public bool autoRegenerate;
         public abstract void StartReload();
+
+        public abstract float GetCurrentAmmo();
+
+        public abstract float GetBackUpAmmo();
     }
 }

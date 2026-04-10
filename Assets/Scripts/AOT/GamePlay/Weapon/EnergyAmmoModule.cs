@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace FPS.GamePlay.Weapon
 {
-    public class EnergyAmmoModule : WeaponAmmoModule
+    public sealed class EnergyAmmoModule : WeaponAmmoModule
     {
         [Tooltip("武器的最大能量值")]
         public float maxEnergy = 100f;
@@ -29,6 +29,18 @@ namespace FPS.GamePlay.Weapon
             autoRegenerate = true;
         }
 
+        void Update()
+        {
+            if (m_CurrentEnergy < maxEnergy && Time.time >= m_LastConsumeTime + regenDelay && autoRegenerate)
+            {
+                // 随时间恢复能量
+                m_CurrentEnergy += energyRegenRate * Time.deltaTime;
+
+                // 防止能量溢出上限
+                m_CurrentEnergy = Mathf.Min(m_CurrentEnergy, maxEnergy);
+            }
+        }
+
         public override bool HasEnoughAmmo(float amountNeeded) => m_CurrentEnergy >= amountNeeded;
 
         public override void ConsumeAmmo(float amount)
@@ -42,22 +54,14 @@ namespace FPS.GamePlay.Weapon
             m_LastConsumeTime = Time.time;
         }
 
-        public override float GetCurrentAmmoRatio() => m_CurrentEnergy / maxEnergy;
-
         public override void StartReload()
         {
         }
 
-        void Update()
-        {
-            if (m_CurrentEnergy < maxEnergy && Time.time >= m_LastConsumeTime + regenDelay && autoRegenerate)
-            {
-                // 随时间恢复能量
-                m_CurrentEnergy += energyRegenRate * Time.deltaTime;
+        public override float GetCurrentAmmoRatio() => m_CurrentEnergy / maxEnergy;
 
-                // 防止能量溢出上限
-                m_CurrentEnergy = Mathf.Min(m_CurrentEnergy, maxEnergy);
-            }
-        }
+        public override float GetCurrentAmmo() => m_CurrentEnergy;
+
+        public override float GetBackUpAmmo() => -1f;
     }
 }
