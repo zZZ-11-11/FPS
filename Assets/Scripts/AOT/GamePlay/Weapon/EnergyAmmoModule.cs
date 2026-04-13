@@ -18,8 +18,6 @@ namespace FPS.GamePlay.Weapon
         private float m_CurrentEnergy;
         private float m_LastConsumeTime;
 
-        public float currentEnergy => m_CurrentEnergy;
-
         void Awake()
         {
             m_CurrentEnergy = maxEnergy;
@@ -33,11 +31,16 @@ namespace FPS.GamePlay.Weapon
         {
             if (m_CurrentEnergy < maxEnergy && Time.time >= m_LastConsumeTime + regenDelay && autoRegenerate)
             {
+                var lastEnergy = m_CurrentEnergy;
                 // 随时间恢复能量
                 m_CurrentEnergy += energyRegenRate * Time.deltaTime;
 
                 // 防止能量溢出上限
                 m_CurrentEnergy = Mathf.Min(m_CurrentEnergy, maxEnergy);
+                if (m_CurrentEnergy > lastEnergy)
+                {
+                    InvokeAmmoChanged();
+                }
             }
         }
 
@@ -52,6 +55,13 @@ namespace FPS.GamePlay.Weapon
 
             // 刷新最后一次消耗的时间，打断能量恢复
             m_LastConsumeTime = Time.time;
+            InvokeAmmoChanged();
+        }
+
+        public override void PickUpAmmo()
+        {
+            m_CurrentEnergy = maxEnergy;
+            InvokeAmmoChanged();
         }
 
         public override void StartReload()
@@ -61,7 +71,12 @@ namespace FPS.GamePlay.Weapon
         public override float GetCurrentAmmoRatio() => m_CurrentEnergy / maxEnergy;
 
         public override float GetCurrentAmmo() => m_CurrentEnergy;
+        public override float GetMaxCapacity() => maxEnergy;
+        public override float GetBackupAmmo() => -1f;
 
-        public override float GetBackUpAmmo() => -1f;
+        public override bool IsAmmoEmpty() => m_CurrentEnergy <= 0f;
+        public override bool HasBackupAmmo() => false; // 能量武器没有备弹概念
+
+        public override bool IsPercentageBased() => true;
     }
 }

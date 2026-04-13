@@ -81,6 +81,8 @@ namespace FPS.GamePlay
         public bool IsPointingAtEnemy { get; private set; }
         public int ActiveWeaponIndex { get; private set; }
 
+        public int maxWeaponSlots => m_WeaponSlots.Length;
+
         public UnityAction<WeaponCore> OnSwitchedToWeapon;
         public UnityAction<WeaponCore, int> OnAddedWeapon;
         public UnityAction<WeaponCore, int> OnRemovedWeapon;

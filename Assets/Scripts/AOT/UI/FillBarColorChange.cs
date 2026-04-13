@@ -6,61 +6,61 @@ namespace FPS.UI
     public sealed class FillBarColorChange : MonoBehaviour
     {
         [Header("Foreground")]
-        [Tooltip("Image for the foreground")]
-        public Image ForegroundImage;
+        [Tooltip("前景图片")]
+        public Image foregroundImage;
 
-        [Tooltip("Default foreground color")]
-        public Color DefaultForegroundColor;
+        [Tooltip("默认前景颜色")]
+        public Color defaultForegroundColor;
 
-        [Tooltip("Flash foreground color when full")]
-        public Color FlashForegroundColorFull;
+        [Tooltip("满时前景颜色")]
+        public Color flashForegroundColorFull;
 
         [Header("Background")]
-        [Tooltip("Image for the background")]
-        public Image BackgroundImage;
+        [Tooltip("背景图")]
+        public Image backgroundImage;
 
-        [Tooltip("Flash background color when empty")]
-        public Color DefaultBackgroundColor;
+        [Tooltip("默认背景颜色")]
+        public Color defaultBackgroundColor;
 
-        [Tooltip("Sharpness for the color change")]
-        public Color FlashBackgroundColorEmpty;
+        [Tooltip("空时背景颜色")]
+        public Color flashBackgroundColorEmpty;
 
         [Header("Values")]
-        [Tooltip("Value to consider full")]
-        public float FullValue = 1f;
+        [Tooltip("满时阈值")]
+        public float fullValue = 1f;
 
-        [Tooltip("Value to consider empty")]
-        public float EmptyValue = 0f;
+        [Tooltip("空时阈值")]
+        public float emptyValue = 0f;
 
-        [Tooltip("Sharpness for the color change")]
-        public float ColorChangeSharpness = 5f;
+        [Tooltip("颜色改变灵敏度")]
+        public float colorChangeSharpness = 5f;
 
         float m_PreviousValue;
 
         public void Initialize(float fullValueRatio, float emptyValueRatio)
         {
-            FullValue = fullValueRatio;
-            EmptyValue = emptyValueRatio;
+            fullValue = fullValueRatio;
+            emptyValue = emptyValueRatio;
 
             m_PreviousValue = fullValueRatio;
         }
 
         public void UpdateVisual(float currentRatio)
         {
-            if (currentRatio == FullValue && currentRatio != m_PreviousValue)
+            if (Mathf.Approximately(currentRatio, fullValue) && !Mathf.Approximately(currentRatio, m_PreviousValue))
             {
-                ForegroundImage.color = FlashForegroundColorFull;
+                foregroundImage.color = flashForegroundColorFull;
             }
-            else if (currentRatio < EmptyValue)
+            else if (currentRatio < emptyValue)
             {
-                BackgroundImage.color = FlashBackgroundColorEmpty;
+                backgroundImage.color = flashBackgroundColorEmpty;
             }
             else
             {
-                ForegroundImage.color = Color.Lerp(ForegroundImage.color, DefaultForegroundColor,
-                    Time.deltaTime * ColorChangeSharpness);
-                BackgroundImage.color = Color.Lerp(BackgroundImage.color, DefaultBackgroundColor,
-                    Time.deltaTime * ColorChangeSharpness);
+                foregroundImage.color = Color.Lerp(foregroundImage.color, defaultForegroundColor,
+                    Time.deltaTime * colorChangeSharpness);
+                backgroundImage.color = Color.Lerp(backgroundImage.color, defaultBackgroundColor,
+                    Time.deltaTime * colorChangeSharpness);
             }
 
             m_PreviousValue = currentRatio;

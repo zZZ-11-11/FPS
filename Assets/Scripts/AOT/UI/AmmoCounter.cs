@@ -1,5 +1,4 @@
 using FPS.Game;
-using FPS.Game.Managers;
 using FPS.GamePlay;
 using FPS.GamePlay.Weapon;
 using TMPro;
@@ -12,109 +11,93 @@ namespace FPS.UI
     [RequireComponent(typeof(FillBarColorChange))]
     public sealed class AmmoCounter : MonoBehaviour
     {
-        [Tooltip("CanvasGroup to fade the ammo UI")]
+        [Tooltip("弹药UI画布")]
         public CanvasGroup canvasGroup;
 
-        [FormerlySerializedAs("WeaponImage")]
-        [Tooltip("Image for the weapon icon")]
+        [Tooltip("武器图片")]
         public Image weaponImage;
 
-        [FormerlySerializedAs("AmmoBackgroundImage")]
-        [Tooltip("Image component for the background")]
+        [Tooltip("弹药背景图")]
         public Image ammoBackgroundImage;
 
-        [FormerlySerializedAs("AmmoFillImage")]
-        [Tooltip("Image component to display fill ratio")]
+        [Tooltip("弹药填充图")]
         public Image ammoFillImage;
 
-        [FormerlySerializedAs("WeaponIndexText")]
-        [Tooltip("Text for Weapon index")]
+        [Tooltip("武器序号文本")]
         public TextMeshProUGUI weaponIndexText;
 
-        [FormerlySerializedAs("BulletCounter")]
-        [Tooltip("Text for Bullet Counter")]
-        public TextMeshProUGUI bulletCounter;
+        [Tooltip("弹药计数器文本")]
+        public TextMeshProUGUI ammoCounter;
 
-        [FormerlySerializedAs("Reload")]
-        [Tooltip("Reload Text for Weapons with physical bullets")]
+        [FormerlySerializedAs("backUpBulletCounter")]
+        [Tooltip("备弹计数器文本")]
+        public TextMeshProUGUI backUpAmmoCounter;
+
+        [Tooltip("换弹文本")]
         public RectTransform reload;
 
-        [FormerlySerializedAs("UnselectedOpacity")]
         [Header("Selection")]
         [Range(0, 1)]
-        [Tooltip("Opacity when weapon not selected")]
+        [Tooltip("武器未选择时的不透明度")]
         public float unselectedOpacity = 0.5f;
 
-        [FormerlySerializedAs("UnselectedScale")]
-        [Tooltip("Scale when weapon not selected")]
+        [Tooltip("武器未选择时的缩放系数")]
         public Vector3 unselectedScale = Vector3.one * 0.8f;
 
-        [FormerlySerializedAs("ControlKeysRoot")]
-        [Tooltip("Root for the control keys")]
+        [Tooltip("根物体")]
         public GameObject controlKeysRoot;
 
-        [FormerlySerializedAs("FillBarColorChange")]
         [Header("Feedback")]
-        [Tooltip("Component to animate the color when empty or full")]
+        [Tooltip("弹药量颜色变化反馈")]
         public FillBarColorChange fillBarColorChange;
 
-        [FormerlySerializedAs("AmmoFillMovementSharpness")]
-        [Tooltip("Sharpness for the fill ratio movements")]
+        [Tooltip("填充动画速度")]
         public float ammoFillMovementSharpness = 20f;
 
         public int weaponCounterIndex { get; set; }
 
-        WeaponManager m_WeaponManager;
-        WeaponCore m_Weapon;
+        private WeaponManager m_WeaponManager;
+        private WeaponCore m_Weapon;
 
-        void Awake()
-        {
-            EventManager.AddListener<AmmoPickupEvent>(OnAmmoPickup);
-        }
-
-        void OnAmmoPickup(AmmoPickupEvent evt)
-        {
-            if (evt.weapon == m_Weapon)
-            {
-                bulletCounter.text = m_Weapon.ammoModule.GetCurrentAmmo().ToString();
-            }
-        }
-
+        /// <summary>
+        /// 初始化绑定的武器，下标，图标，弹药量，弹药量表，备弹量
+        /// </summary>
+        /// <param name="weapon"></param>
+        /// <param name="weaponIndex"></param>
         public void Initialize(WeaponCore weapon, int weaponIndex)
         {
             m_Weapon = weapon;
             weaponCounterIndex = weaponIndex;
             weaponImage.sprite = weapon.weaponIcon;
-            if (Mathf.Approximately(weapon.ammoModule.GetBackUpAmmo(), -1))
-            {
-                bulletCounter.transform.parent.gameObject.SetActive(false);
-            }
-            else
-            {
-                bulletCounter.text = weapon.ammoModule.GetCurrentAmmo().ToString();
-            }
 
-            reload.gameObject.SetActive(false);
+            RefreshAmmoText();
+
             m_WeaponManager = FindFirstObjectByType<WeaponManager>();
             DebugUtility.HandleErrorIfNullFindObject<WeaponManager, AmmoCounter>(m_WeaponManager, this);
 
             weaponIndexText.text = (weaponCounterIndex + 1).ToString();
+            fillBarColorChange.Initialize(1f, m_Weapon.fireModule.GetAmmoPerShot() / m_Weapon.ammoModule.GetMaxCapacity());
+        }
 
-            var ammoPerShot = m_Weapon.fireModule.GetAmmoPerShot();
-            if (!Mathf.Approximately(ammoPerShot, -1))
+        private void Start()
+        {
+            if (m_Weapon != null && m_Weapon.ammoModule != null)
             {
-                fillBarColorChange.Initialize(1f, m_Weapon.fireModule.GetAmmoPerShot());
+                m_Weapon.ammoModule.onAmmoChanged += RefreshAmmoText;
             }
         }
 
+        /// <summary>
+        /// 更新弹药量表，弹药数量，根据是否当前激活的武器更新透明度和缩放，隐藏部分信息
+        /// </summary>
         void Update()
         {
+            // 更新弹药量表
             var currenFillRatio = m_Weapon.ammoModule.GetCurrentAmmoRatio();
-            ammoFillImage.fillAmount = Mathf.Lerp(ammoFillImage.fillAmount, currenFillRatio,
-                Time.deltaTime * ammoFillMovementSharpness);
+            ammoFillImage.fillAmount = currenFillRatio;
+            fillBarColorChange.UpdateVisual(currenFillRatio);
 
-            bulletCounter.text = m_Weapon.ammoModule.GetCurrentAmmo().ToString();
-
+            //根据是否当前激活的武器更新透明度和缩放
             var isActiveWeapon = m_Weapon == m_WeaponManager.GetActiveWeapon();
 
             canvasGroup.alpha = Mathf.Lerp(canvasGroup.alpha, isActiveWeapon ? 1f : unselectedOpacity,
@@ -123,14 +106,52 @@ namespace FPS.UI
                 Time.deltaTime * 10);
             controlKeysRoot.SetActive(!isActiveWeapon);
 
-            fillBarColorChange.UpdateVisual(currenFillRatio);
-
-            reload.gameObject.SetActive(m_Weapon.ammoModule.GetBackUpAmmo() > 0 && m_Weapon.ammoModule.GetCurrentAmmo() == 0 && m_Weapon.isWeaponActive);
+            reload.gameObject.SetActive(
+                m_Weapon.ammoModule.HasBackupAmmo() &&
+                m_Weapon.ammoModule.IsAmmoEmpty() &&
+                m_Weapon.isWeaponActive
+            );
         }
 
-        void Destroy()
+        /// <summary>
+        ///  更新弹药与备用弹药UI
+        /// </summary>
+        private void RefreshAmmoText()
         {
-            EventManager.RemoveListener<AmmoPickupEvent>(OnAmmoPickup);
+            var ammoModule = m_Weapon.ammoModule;
+
+            var currentAmmo = ammoModule.GetCurrentAmmo();
+            var currentBackup = ammoModule.GetBackupAmmo();
+
+            // 格式化当前弹药
+            if (ammoModule.IsPercentageBased())
+            {
+                var percent = Mathf.RoundToInt(currentAmmo * 100f);
+                ammoCounter.text = $"{percent}%";
+            }
+            else
+            {
+                ammoCounter.text = currentAmmo.ToString("0");
+            }
+
+            // 格式化备用弹药
+            if (ammoModule.HasBackupAmmo())
+            {
+                backUpAmmoCounter.transform.parent.gameObject.SetActive(true);
+                backUpAmmoCounter.text = currentBackup.ToString("0");
+            }
+            else
+            {
+                backUpAmmoCounter.transform.parent.gameObject.SetActive(false);
+            }
+        }
+
+        void OnDestroy()
+        {
+            if (m_Weapon != null && m_Weapon.ammoModule != null)
+            {
+                m_Weapon.ammoModule.onAmmoChanged -= RefreshAmmoText;
+            }
         }
     }
 }
