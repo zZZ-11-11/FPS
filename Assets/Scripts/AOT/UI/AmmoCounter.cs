@@ -44,7 +44,7 @@ namespace FPS.UI
         [Tooltip("武器未选择时的缩放系数")]
         public Vector3 unselectedScale = Vector3.one * 0.8f;
 
-        [Tooltip("根物体")]
+        [Tooltip("武器序号根物体")]
         public GameObject controlKeysRoot;
 
         [Header("Feedback")]
