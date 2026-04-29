@@ -12,6 +12,9 @@ namespace FPS.Game.Shared
         [Tooltip("描述")]
         public string description;
 
+        [Tooltip("计数器")]
+        public string counter;
+
         [Tooltip("是否支线")]
         public bool isOptional;
 

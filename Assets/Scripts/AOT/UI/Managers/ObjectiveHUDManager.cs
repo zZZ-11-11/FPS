@@ -6,22 +6,22 @@ using UnityEngine;
 
 namespace FPS.UI.Manager
 {
-    public class ObjectiveHUDManager : MonoBehaviour
+    public sealed class ObjectiveHUDManager : MonoBehaviour
     {
-        [Tooltip("UI panel containing the layoutGroup for displaying objectives")]
-        public RectTransform ObjectivePanel;
+        [Tooltip("任务面板RectTransform")]
+        public RectTransform objectivePanel;
 
-        [Tooltip("Prefab for the primary objectives")]
-        public GameObject PrimaryObjectivePrefab;
+        [Tooltip("主线任务")]
+        public GameObject primaryObjectivePrefab;
 
-        [Tooltip("Prefab for the primary objectives")]
-        public GameObject SecondaryObjectivePrefab;
+        [Tooltip("支线任务")]
+        public GameObject secondaryObjectivePrefab;
 
-        Dictionary<Objective, ObjectiveToast> m_ObjectivesDictionnary;
+        Dictionary<Objective, ObjectiveToast> m_ObjectivesDictionary;
 
         void Awake()
         {
-            m_ObjectivesDictionnary = new Dictionary<Objective, ObjectiveToast>();
+            m_ObjectivesDictionary = new Dictionary<Objective, ObjectiveToast>();
 
             EventManager.AddListener<ObjectiveUpdateEvent>(OnUpdateObjective);
 
@@ -29,60 +29,68 @@ namespace FPS.UI.Manager
             Objective.onObjectiveCompleted += UnregisterObjective;
         }
 
-        public void RegisterObjective(Objective objective)
+        private void RegisterObjective(Objective objective)
         {
-            // instanciate the Ui element for the new objective
-            GameObject objectiveUIInstance =
-                Instantiate(objective.isOptional ? SecondaryObjectivePrefab : PrimaryObjectivePrefab, ObjectivePanel);
+            if (m_ObjectivesDictionary.ContainsKey(objective))
+            {
+                return;
+            }
+            // 根据主线或支线实例化UI
+            var objectiveUIInstance =
+                Instantiate(objective.isOptional ? secondaryObjectivePrefab : primaryObjectivePrefab, objectivePanel);
 
+            // 置顶最新的主线任务
             if (!objective.isOptional)
+            {
                 objectiveUIInstance.transform.SetSiblingIndex(0);
+            }
 
-            ObjectiveToast toast = objectiveUIInstance.GetComponent<ObjectiveToast>();
+            var toast = objectiveUIInstance.GetComponent<ObjectiveToast>();
             DebugUtility.HandleErrorIfNullGetComponent<ObjectiveToast, ObjectiveHUDManager>(toast, this,
                 objectiveUIInstance.gameObject);
 
-            // initialize the element and give it the objective description
-            toast.Initialize(objective.title, objective.description, "", objective.isOptional, objective.delayVisible);
+            // 初始化文本等
+            toast.Initialize(objective.title, objective.description, objective.counter, objective.isOptional, objective.delayVisible);
 
-            m_ObjectivesDictionnary.Add(objective, toast);
-
-            UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(ObjectivePanel);
+            // 注册到字典中
+            m_ObjectivesDictionary.Add(objective, toast);
         }
 
-        public void UnregisterObjective(Objective objective)
+        private void UnregisterObjective(Objective objective)
         {
-            // if the objective if in the list, make it fade out, and remove it from the list
-            if (m_ObjectivesDictionnary.TryGetValue(objective, out ObjectiveToast toast) && toast != null)
+            // 将在字典中的对应任务淡出和滑出
+            if (m_ObjectivesDictionary.TryGetValue(objective, out var toast) && toast)
             {
                 toast.Complete();
             }
 
-            m_ObjectivesDictionnary.Remove(objective);
+            //移出字典
+            m_ObjectivesDictionary.Remove(objective);
         }
 
         void OnUpdateObjective(ObjectiveUpdateEvent evt)
         {
-            if (m_ObjectivesDictionnary.TryGetValue(evt.objective, out ObjectiveToast toast) && toast != null)
+            if (!m_ObjectivesDictionary.TryGetValue(evt.objective, out var toast) || toast == null)
             {
-                // set the new updated description for the objective, and forces the content size fitter to be recalculated
-                Canvas.ForceUpdateCanvases();
-                if (!string.IsNullOrEmpty(evt.descriptionText))
-                    toast.descriptionTextContent.text = evt.descriptionText;
-
-                if (!string.IsNullOrEmpty(evt.counterText))
-                    toast.counterTextContent.text = evt.counterText;
-
-                if (toast.GetComponent<RectTransform>())
-                {
-                    UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(toast.GetComponent<RectTransform>());
-                }
+                return;
             }
+
+            if (!string.IsNullOrEmpty(evt.descriptionText))
+            {
+                toast.descriptionTextContent.text = evt.descriptionText;
+            }
+
+            if (!string.IsNullOrEmpty(evt.counterText))
+            {
+                toast.counterTextContent.text = evt.counterText;
+            }
+
+            UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform) toast.transform);
         }
 
         void OnDestroy()
         {
-            EventManager.AddListener<ObjectiveUpdateEvent>(OnUpdateObjective);
+            EventManager.RemoveListener<ObjectiveUpdateEvent>(OnUpdateObjective);
 
             Objective.onObjectiveCreated -= RegisterObjective;
             Objective.onObjectiveCompleted -= UnregisterObjective;

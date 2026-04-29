@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿/*using System.Collections;
 using FPS.GamePlay.Base;
 using UnityEngine;
 
@@ -7,8 +7,6 @@ namespace FPS.GamePlay.Weapon
     public class BurstFireModule : WeaponFireModule
     {
         [Header("Burst Settings")]
-        public ProjectileBase projectilePrefab;
-
         [Tooltip("每次点射发射的子弹数量（例如：三连发填 3）")]
         public int bulletsPerBurst = 3;
 
@@ -53,7 +51,7 @@ namespace FPS.GamePlay.Weapon
             m_IsBursting = true;
             var ammo = core.ammoModule;
 
-            for (int i = 0; i < bulletsPerBurst; i++)
+            for (var i = 0; i < bulletsPerBurst; i++)
             {
                 // 每次射击前再次检查弹药！
                 if (ammo != null && !ammo.HasEnoughAmmo(ammoPerShot))
@@ -69,9 +67,9 @@ namespace FPS.GamePlay.Weapon
 
                 // 生成子弹
                 Vector3 shotDirection = GetSpreadDirection(core.weaponMuzzle);
-                ProjectileBase newProjectile = Instantiate(projectilePrefab, core.weaponMuzzle.position, Quaternion.LookRotation(shotDirection));
 
-                newProjectile.Shoot(new ShootContext(0f, core.owner, core.muzzleWorldVelocity));
+                var newProjectile = m_ProjectilePool.Get();
+                newProjectile.Shoot(new ShootContext(0f, core.owner, core.muzzleWorldVelocity, core.weaponMuzzle, shotDirection));
 
                 core.fxModule.PlayShootFX(core.weaponMuzzle);
 
@@ -96,4 +94,5 @@ namespace FPS.GamePlay.Weapon
 
         public override float GetAmmoPerShot() => ammoPerShot;
     }
-}
+}*/
+

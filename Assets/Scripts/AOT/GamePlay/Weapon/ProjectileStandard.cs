@@ -62,39 +62,50 @@ namespace FPS.GamePlay
         [Tooltip("Debug颜色")]
         public Color radiusColor = Color.cyan * 0.2f;
 
-        private ProjectileBase m_ProjectileBase;
         private Vector3 m_LastRootPosition;
         private Vector3 m_Velocity;
         private bool m_HasTrajectoryOverride;
         private float m_ShootTime;
         private Vector3 m_TrajectoryCorrectionVector;
         private Vector3 m_ConsumedTrajectoryCorrectionVector;
-        private List<Collider> m_IgnoredColliders;
+        private readonly List<Collider> m_IgnoredColliders = new List<Collider>();
         private readonly RaycastHit[] m_Hits = new RaycastHit[16];
 
-        private
-            const QueryTriggerInteraction k_trigger_interaction = QueryTriggerInteraction.Collide;
+        private const QueryTriggerInteraction k_trigger_interaction = QueryTriggerInteraction.Collide;
 
-        void OnEnable()
+        private Renderer[] m_Renderers;
+
+        private TrailRenderer m_Trail;
+
+        void Awake()
         {
-            m_ProjectileBase = GetComponent<ProjectileBase>();
-            DebugUtility.HandleErrorIfNullGetComponent<ProjectileBase, ProjectileStandard>(m_ProjectileBase, this,
-                gameObject);
+            m_Renderers = GetComponentsInChildren<Renderer>();
+            m_Trail = GetComponentInChildren<TrailRenderer>();
+        }
 
-            m_ProjectileBase.onShoot += OnShoot;
+        private void OnEnable()
+        {
+            m_ConsumedTrajectoryCorrectionVector = Vector3.zero;
+            m_HasTrajectoryOverride = false;
+            m_IgnoredColliders.Clear();
+
+            foreach (var r in m_Renderers)
+            {
+                r.enabled = true;
+            }
         }
 
         //初始化
-        void OnShoot()
+        public override void Shoot(ShootContext shootContext)
         {
+            base.Shoot(shootContext);
             // 修复子弹过长导致视觉上的穿墙bug
             var rootPosition = root.position;
             var distance = tip.position - rootPosition;
 
             if (CheckCollision(rootPosition, distance))
             {
-                var allRenderers = GetComponentsInChildren<Renderer>();
-                foreach (var r in allRenderers)
+                foreach (var r in m_Renderers)
                 {
                     r.enabled = false;
                 }
@@ -103,21 +114,16 @@ namespace FPS.GamePlay
 
             m_ShootTime = Time.time;
             m_Velocity = transform.forward * speed;
-            m_IgnoredColliders = new List<Collider>();
 
-            var ownerColliders = m_ProjectileBase.owner.GetComponentsInChildren<Collider>();
-            m_IgnoredColliders.AddRange(ownerColliders);
+            m_IgnoredColliders.AddRange(shootContext.ownerColliders);
 
-            var weaponManager = m_ProjectileBase.owner.GetComponent<WeaponManager>();
-            var enemyController = m_ProjectileBase.owner.GetComponent<FPS.AI.EnemyController>();
-
-            if (weaponManager)
+            if (shootContext.isPlayer && shootContext.weaponCameraTransform)
             {
                 // 玩家的弹道修正
                 m_HasTrajectoryOverride = true;
 
-                var weaponCameraTransform = weaponManager.WeaponCamera.transform;
-                var cameraToMuzzle = (m_ProjectileBase.initialPosition - weaponCameraTransform.position);
+                var weaponCameraTransform = shootContext.weaponCameraTransform;
+                var cameraToMuzzle = (initialPosition - weaponCameraTransform.position);
 
                 // 分解到xy上的偏移
                 m_TrajectoryCorrectionVector = Vector3.ProjectOnPlane(-cameraToMuzzle, weaponCameraTransform.forward);
@@ -133,24 +139,25 @@ namespace FPS.GamePlay
                 }
 
                 // 防穿墙检测
-                if (Physics.Raycast(weaponManager.WeaponCamera.transform.position, cameraToMuzzle.normalized,
+                if (Physics.Raycast(weaponCameraTransform.position, cameraToMuzzle.normalized,
                         out var hit, cameraToMuzzle.magnitude, hittableLayers, k_trigger_interaction))
                 {
-                    if (IsHitValid(hit)) OnHit(hit.point, hit.normal, hit.collider);
+                    if (IsHitValid(hit))
+                    {
+                        OnHit(hit.point, hit.normal, hit.collider);
+                    }
                 }
             }
-            else if (enemyController && enemyController.knownDetectedTarget)
+            else if (!shootContext.isPlayer && shootContext.targetTransform)
             {
                 // 敌人的弹道修正
                 m_HasTrajectoryOverride = true;
 
                 // 获取玩家的目标点
-                var targetPos = enemyController.knownDetectedTarget.transform.position;
-
-                print("获取玩家瞄准点坐标：" + targetPos);
+                var targetPos = shootContext.targetTransform.position;
 
                 // 计算从枪管到目标点的实际向量
-                var muzzleToTarget = targetPos - m_ProjectileBase.initialPosition;
+                var muzzleToTarget = targetPos - initialPosition;
 
                 // 将该向量投影到垂直于枪管朝向的平面上
                 m_TrajectoryCorrectionVector = Vector3.ProjectOnPlane(muzzleToTarget, transform.forward);
@@ -165,13 +172,19 @@ namespace FPS.GamePlay
             }
 
             m_LastRootPosition = root.position;
+
+            if (m_Trail)
+            {
+                m_Trail.Clear();
+            }
         }
 
         void Update()
         {
             if (Time.time - m_ShootTime > maxLifeTime)
             {
-                Destroy(gameObject);
+                ReleaseToPool();
+                return;
             }
             var expectedDisplacement = m_Velocity * Time.deltaTime;
             //继承武器速度的位移
@@ -224,7 +237,7 @@ namespace FPS.GamePlay
         private Vector3 GetWeaponVel()
         {
             // 获取武器速度
-            var weaponVel = m_ProjectileBase.inheritedMuzzleVelocity;
+            var weaponVel = inheritedMuzzleVelocity;
 
             // 过滤掉向后的速度（如果速度方向和枪口朝向相反，点乘 < 0）
             if (Vector3.Dot(weaponVel, transform.forward) < 0)
@@ -302,14 +315,14 @@ namespace FPS.GamePlay
             if (areaOfDamage)
             {
                 areaOfDamage.InflictDamageInArea(damage, point, hittableLayers, k_trigger_interaction,
-                    m_ProjectileBase.owner);
+                    owner);
             }
             else
             {
                 var damageable = collider.GetComponent<Damageable>();
                 if (damageable)
                 {
-                    damageable.InflictDamage(damage, false, m_ProjectileBase.owner);
+                    damageable.InflictDamage(damage, false, owner);
                 }
             }
 
@@ -330,7 +343,7 @@ namespace FPS.GamePlay
                 AudioUtility.CreateSfx(impactSfxClip, point, AudioUtility.AudioGroups.Impact, 1f, 3f);
             }
 
-            Destroy(this.gameObject);
+            ReleaseToPool();
         }
 
         void OnDrawGizmosSelected()

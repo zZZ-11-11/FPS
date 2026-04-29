@@ -52,7 +52,11 @@ namespace FPS.GamePlay.Objective
 
             if (string.IsNullOrEmpty(description))
             {
-                description = GetUpdatedCounterAmount();
+                description = "杀敌数:";
+            }
+            if (string.IsNullOrEmpty(counter))
+            {
+                counter = GetUpdatedCounterAmount();
             }
             base.Start();
 

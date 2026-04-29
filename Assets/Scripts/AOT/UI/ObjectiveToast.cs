@@ -4,6 +4,7 @@ using Cysharp.Threading.Tasks;
 using FPS.Game;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace FPS.UI
@@ -62,7 +63,7 @@ namespace FPS.UI
         private AudioSource m_AudioSource;
         private RectTransform m_RectTransform;
 
-        // 用于管理和随时打断异步任务的令牌
+        // 淡入淡出，滑入滑出的Token
         private CancellationTokenSource m_AnimationCts;
 
         private void Awake()
@@ -72,13 +73,12 @@ namespace FPS.UI
 
         public void Initialize(string titleText, string descText, string counterText, bool isOptional, float delay)
         {
-            Canvas.ForceUpdateCanvases();
-
             titleTextContent.text = titleText;
             descriptionTextContent.text = descText;
             counterTextContent.text = counterText;
             subTitleRect.gameObject.SetActive(!string.IsNullOrEmpty(descriptionTextContent.text));
 
+            Canvas.ForceUpdateCanvases();
             if (m_RectTransform)
             {
                 LayoutRebuilder.ForceRebuildLayoutImmediate(m_RectTransform);
@@ -172,11 +172,13 @@ namespace FPS.UI
 
                 layoutGroup.padding.left = (int) curve.Evaluate(time / duration);
 
-                //LayoutRebuilder.MarkLayoutForRebuild(m_RectTransform);
+                // 修改padding不会触发重新计算，需要手动调用
+                LayoutRebuilder.MarkLayoutForRebuild(m_RectTransform);
 
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken: ct);
             }
             layoutGroup.padding.left = (int) curve.Evaluate(1f);
+            LayoutRebuilder.MarkLayoutForRebuild(m_RectTransform);
         }
 
         private void PlaySound(AudioClip sound)

@@ -1,5 +1,4 @@
-﻿using System;
-using FPS.GamePlay.Base;
+﻿/*using FPS.GamePlay.Base;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -8,8 +7,6 @@ namespace FPS.GamePlay.Weapon
     public class ChargeFireModule : WeaponFireModule
     {
         [Header("Projectile Settings")]
-        public ProjectileBase projectilePrefab;
-
         [Tooltip("达到满充能时，射出的最大弹体数量（或者代表伤害倍率）")]
         public int maxBulletsPerShot = 1;
 
@@ -115,11 +112,11 @@ namespace FPS.GamePlay.Weapon
             // 生成子弹
             for (int i = 0; i < bulletsToShoot; i++)
             {
-                Vector3 shotDirection = GetSpreadDirection(core.weaponMuzzle);
+                var shotDirection = GetSpreadDirection(core.weaponMuzzle);
 
-                ProjectileBase newProjectile = Instantiate(projectilePrefab, core.weaponMuzzle.position, Quaternion.LookRotation(shotDirection));
+                var newProjectile = m_ProjectilePool.Get();
 
-                newProjectile.Shoot(new ShootContext(currentCharge, core.owner, core.muzzleWorldVelocity));
+                newProjectile.Shoot(new ShootContext(currentCharge, core.owner, core.muzzleWorldVelocity, core.weaponMuzzle, shotDirection));
 
                 core.fxModule.PlayShootFX(core.weaponMuzzle);
             }
@@ -141,4 +138,5 @@ namespace FPS.GamePlay.Weapon
 
         public override float GetAmmoPerShot() => -1;
     }
-}
+}*/
+

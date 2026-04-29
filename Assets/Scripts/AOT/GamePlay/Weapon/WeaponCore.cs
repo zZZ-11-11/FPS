@@ -1,3 +1,4 @@
+using FPS.AI;
 using FPS.GamePlay.Base;
 using UnityEngine;
 using UnityEngine.Events;
@@ -55,6 +56,11 @@ namespace FPS.GamePlay.Weapon
 
         public bool isWeaponActive { get; private set; }
 
+        public Collider[] cachedOwnerColliders { get; private set; }
+        public bool isPlayerWeapon { get; private set; }
+        public Transform cachedWeaponCameraTransform { get; private set; }
+        public EnemyController cachedEnemyController { get; private set; }
+
         void Awake()
         {
             if (fireModule == null)
@@ -74,6 +80,20 @@ namespace FPS.GamePlay.Weapon
         public void SetOwner(GameObject newOwner)
         {
             owner = newOwner;
+
+            cachedOwnerColliders = owner.GetComponentsInChildren<Collider>();
+
+            var weaponManager = owner.GetComponent<WeaponManager>();
+            if (weaponManager != null)
+            {
+                isPlayerWeapon = true;
+                cachedWeaponCameraTransform = weaponManager.WeaponCamera.transform;
+            }
+            else
+            {
+                isPlayerWeapon = false;
+                cachedEnemyController = owner.GetComponent<EnemyController>();
+            }
         }
 
         public bool HandleShootInputs(bool inputDown, bool inputHeld, bool inputUp)

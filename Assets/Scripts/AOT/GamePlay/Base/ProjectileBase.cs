@@ -1,28 +1,44 @@
 using UnityEngine;
-using UnityEngine.Events;
+using UnityEngine.Pool;
 
 namespace FPS.GamePlay.Base
 {
     public abstract class ProjectileBase : MonoBehaviour
     {
-        public GameObject owner { get; private set; }
-        public Vector3 initialPosition { get; private set; }
-        public Vector3 initialDirection { get; private set; }
-        public Vector3 inheritedMuzzleVelocity { get; private set; }
+        protected GameObject owner { get; private set; }
+        protected Vector3 initialPosition { get; private set; }
+        protected Vector3 inheritedMuzzleVelocity { get; private set; }
         public float initialCharge { get; private set; }
 
-        public UnityAction onShoot;
+        private IObjectPool<ProjectileBase> m_Pool;
 
-        public void Shoot(ShootContext shootContext)
+        public void SetPool(IObjectPool<ProjectileBase> pool)
+        {
+            m_Pool = pool;
+        }
+
+        protected void ReleaseToPool()
+        {
+            if (m_Pool != null)
+            {
+                m_Pool.Release(this);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        public virtual void Shoot(ShootContext shootContext)
         {
             owner = shootContext.owner;
             inheritedMuzzleVelocity = shootContext.muzzleWorldVelocity;
             initialCharge = shootContext.currentCharge;
 
-            var projectileTransform = transform;
+            var projectileTransform = shootContext.initialTransform;
             initialPosition = projectileTransform.position;
-            initialDirection = projectileTransform.forward;
-            onShoot?.Invoke();
+            transform.position = initialPosition;
+            transform.rotation = Quaternion.LookRotation(shootContext.shotDirection);
         }
     }
 }

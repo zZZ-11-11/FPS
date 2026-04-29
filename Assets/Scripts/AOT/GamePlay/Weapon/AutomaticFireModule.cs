@@ -1,5 +1,4 @@
-﻿using System;
-using FPS.GamePlay.Base;
+﻿using FPS.GamePlay.Base;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -7,9 +6,6 @@ namespace FPS.GamePlay.Weapon
 {
     public sealed class AutomaticFireModule : WeaponFireModule
     {
-        [Tooltip("每次射击的弹道预制体")]
-        public ProjectileBase projectilePrefab;
-
         [Tooltip("每次射击生成的子弹数量")]
         public int bulletsPerShot = 1;
 
@@ -54,10 +50,29 @@ namespace FPS.GamePlay.Weapon
             for (var i = 0; i < bulletsPerShot; i++)
             {
                 var shotDirection = GetSpreadDirection(muzzle);
-                var newProjectile = Instantiate(projectilePrefab, muzzle.position, Quaternion.LookRotation(shotDirection));
-                newProjectile.Shoot(new ShootContext(0, weaponCore.owner, weaponCore.muzzleWorldVelocity));
-                weaponCore.fxModule.PlayShootFX(weaponCore.weaponMuzzle);
+                Transform targetTrans = null;
+                if (!weaponCore.isPlayerWeapon
+                    && weaponCore.cachedEnemyController != null
+                    && weaponCore.cachedEnemyController.knownDetectedTarget != null)
+                {
+                    targetTrans = weaponCore.cachedEnemyController.knownDetectedTarget.transform;
+                }
+
+                var context = new ShootContext(
+                    currentCharge: 0,
+                    owner: weaponCore.owner,
+                    muzzleWorldVelocity: weaponCore.muzzleWorldVelocity,
+                    initialTransform: muzzle,
+                    shotDirection: shotDirection,
+                    ownerColliders: weaponCore.cachedOwnerColliders,
+                    isPlayer: weaponCore.isPlayerWeapon,
+                    weaponCameraTransform: weaponCore.cachedWeaponCameraTransform,
+                    targetTransform: targetTrans
+                );
+                var newProjectile = m_ProjectilePool.Get();
+                newProjectile.Shoot(context);
             }
+            weaponCore.fxModule.PlayShootFX(weaponCore.weaponMuzzle);
 
             m_LastTimeShot = Time.time;
             return true;
